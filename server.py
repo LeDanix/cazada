@@ -96,7 +96,9 @@ def build_neighborhoods_ref(profile: dict) -> dict:
     return ref
 
 
-def format_row_for_frontend(r: sqlite3.Row) -> dict:
+def format_row_for_frontend(r: sqlite3.Row, profile: dict | None = None) -> dict:
+    if profile is None:
+        profile = load_buyer_profile()
     d = dict(r)
     raw = json.loads(d.get("raw_json") or "{}")
     sc = json.loads(d.get("score_json") or "{}")
@@ -230,6 +232,9 @@ def format_row_for_frontend(r: sqlite3.Row) -> dict:
                 "monthly_quota_90_eur": round(float(fin.get("monthly_mortgage_eur") or 0)),
                 "cash_needed_90_eur": fin.get("cash_needed_total_eur", 0),
                 "fits_700_rule": bool(fin.get("fits_monthly_limit_700", True)),
+                "ltv_pct": int(fin.get("ltv_pct") or p_fin.get("default_ltv_pct", 90)),
+                "mortgage_years": int(p_fin.get("mortgage_years", 30)),
+                "max_monthly_mortgage_eur": max_quota_cfg,
             },
         },
     }
@@ -287,7 +292,7 @@ def fetch_all_properties_and_profile() -> dict:
     scan_row = conn.execute("SELECT * FROM scan_runs ORDER BY id DESC LIMIT 1").fetchone()
     conn.close()
 
-    raw_props = [format_row_for_frontend(r) for r in rows]
+    raw_props = [format_row_for_frontend(r, profile) for r in rows]
     props = deduplicate_properties(raw_props)
     guide_md = GUIDE_PATH.read_text(encoding="utf-8") if GUIDE_PATH.exists() else ""
 

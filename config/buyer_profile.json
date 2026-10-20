@@ -1,22 +1,22 @@
 {
   "profile_name": "Comprador Joven Zaragoza (<35 años) - Eficiencia & Reforma Inteligente",
-  "updated_at": "2026-10-19",
+  "updated_at": "2026-10-20 11:31",
   "financials": {
     "age_under_35": true,
-    "net_monthly_income_eur": 2100,
+    "net_monthly_income_eur": 2100.0,
     "max_debt_ratio": 0.3333,
-    "max_monthly_mortgage_eur": 700,
-    "available_savings_min_eur": 30000,
-    "available_savings_max_eur": 60000,
-    "target_price_min_eur": 95000,
-    "target_price_max_eur": 200000,
-    "sweet_spot_reform_price_max_eur": 135000,
+    "max_monthly_mortgage_eur": 700.0,
+    "available_savings_min_eur": 30000.0,
+    "available_savings_max_eur": 60000.0,
+    "target_price_min_eur": 95000.0,
+    "target_price_max_eur": 200000.0,
+    "sweet_spot_reform_price_max_eur": 135000.0,
     "mortgage_years": 30,
     "estimated_interest_rate_tin": 2.75,
     "default_ltv_pct": 90,
     "aragon_itp_general_pct": 8.0,
     "aragon_itp_young_under_100k_pct": 7.0,
-    "notary_registry_appraisal_eur": 2200
+    "notary_registry_appraisal_eur": 2200.0
   },
   "strategy": {
     "primary": "Comprar barato (< 135.000 €) con buena estructura/planta/luz e invertir en reforma de eficiencia energética (ventanas Climalit/PVC, aislamiento), baño y cocina (y salón/habitaciones si sobra), siempre que el coste total final sea claramente inferior al de un piso ya reformado.",
@@ -34,7 +34,11 @@
     "terrace_green_view_bonus": true,
     "natural_light_required": true,
     "cross_ventilation_preferred": true,
-    "preferred_orientations": ["Sur", "Sureste", "Este"],
+    "preferred_orientations": [
+      "Sur",
+      "Sureste",
+      "Este"
+    ],
     "preferred_heating": "Central (con contador individual o comunidad contenida)",
     "discard_occupied_or_uninhabitable": true,
     "allow_auctions_if_visitable_or_documented": true
