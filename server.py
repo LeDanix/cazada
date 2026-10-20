@@ -127,8 +127,12 @@ def format_row_for_frontend(r: sqlite3.Row) -> dict:
         else:
             badges.append(f"Agencia: {seller_name} ({bonuses.get('agency_penalty_points', -10)} pts)")
 
-    if price <= 135000:
-        badges.append("Estrategia A (<135k € para reformar)")
+    p_fin = profile.get("financials", {})
+    sweet_max_cfg = int(p_fin.get("sweet_spot_reform_price_max_eur", 135000))
+    max_quota_cfg = int(p_fin.get("max_monthly_mortgage_eur", 700))
+
+    if price <= sweet_max_cfg:
+        badges.append(f"Estrategia A (≤{sweet_max_cfg // 1000}k € para reformar)")
     if d.get("has_garage"):
         badges.append(f"Garaje (+{int(bonuses.get('garage_points', 6))} pts)")
     if d.get("has_storage"):
@@ -138,7 +142,7 @@ def format_row_for_frontend(r: sqlite3.Row) -> dict:
     if d.get("has_terrace"):
         badges.append("Con terraza")
     if fin.get("fits_monthly_limit_700"):
-        badges.append(f"Cuota {fin.get('monthly_mortgage_eur', 0):.0f} €/mes (≤700 €)")
+        badges.append(f"Cuota {fin.get('monthly_mortgage_eur', 0):.0f} €/mes (≤{max_quota_cfg} €)")
 
     matched_nb = zone_info.get("matched_neighborhood") or d.get("neighborhood") or "Zaragoza"
     if matched_nb in ("Zaragoza (General)", "Zaragoza Capital") and d.get("neighborhood") and d.get("neighborhood") not in ("Zaragoza (General)", "Zaragoza Capital"):
@@ -454,8 +458,30 @@ class ZgzHouseFinderHandler(BaseHTTPRequestHandler):
             self._send_json({"ok": True, "state": fetch_all_properties_and_profile()})
             return
 
-        if parsed.path == "/api/weights":
+        if parsed.path in ("/api/weights", "/api/config"):
             profile = load_buyer_profile()
+            if "financials" in body and isinstance(body["financials"], dict):
+                fin_cfg = profile.setdefault("financials", {})
+                for fk, fval in body["financials"].items():
+                    if fk == "age_under_35":
+                        fin_cfg[fk] = bool(fval)
+                    elif fk in ("mortgage_years", "default_ltv_pct"):
+                        fin_cfg[fk] = int(float(fval))
+                    else:
+                        fin_cfg[fk] = float(fval)
+                income = float(fin_cfg.get("net_monthly_income_eur") or 2100.0)
+                max_q = float(fin_cfg.get("max_monthly_mortgage_eur") or 700.0)
+                if income > 0:
+                    fin_cfg["max_debt_ratio"] = round(max_q / income, 4)
+
+            if "requirements" in body and isinstance(body["requirements"], dict):
+                req_cfg = profile.setdefault("hard_and_soft_requirements", {})
+                for rk, rval in body["requirements"].items():
+                    if rk in ("min_bedrooms", "min_sqm_strict", "min_sqm_ideal", "min_floor"):
+                        req_cfg[rk] = int(float(rval))
+                    elif isinstance(rval, bool):
+                        req_cfg[rk] = rval
+
             if "weights" in body:
                 for k, val in body["weights"].items():
                     if k in profile["scoring_factors_1_to_10"]:
@@ -484,6 +510,7 @@ class ZgzHouseFinderHandler(BaseHTTPRequestHandler):
                                         n for n in zm[t_key]["neighborhoods"] if n.lower() != alias.lower()
                                     ]
                                 zm[target_tier]["neighborhoods"].append(alias)
+            profile["updated_at"] = datetime.now().strftime("%Y-%m-%d %H:%M")
             recalculate_all_scores(profile)
             self._send_json({"ok": True, "state": fetch_all_properties_and_profile()})
             return

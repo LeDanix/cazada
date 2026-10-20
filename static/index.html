@@ -883,16 +883,12 @@
     }
 
     #map-panel {
-      display: none;
       background: var(--bg-card);
-      border: 2px solid var(--primary);
+      border: 1px solid var(--border);
       border-radius: var(--radius);
       margin-bottom: 22px;
       box-shadow: var(--shadow-md);
       overflow: hidden;
-    }
-    #map-panel.visible {
-      display: block;
     }
 
     .map-panel-footer {
@@ -909,8 +905,47 @@
     }
 
     #map-container {
-      height: 520px;
+      height: 600px;
       width: 100%;
+    }
+
+    .fin-config-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .fin-config-item {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .fin-config-item label {
+      font-size: 0.76rem;
+      font-weight: 700;
+      color: var(--text);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .fin-config-item .fin-hint {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      line-height: 1.35;
+    }
+
+    .fin-config-item input,
+    .fin-config-item select {
+      width: 100%;
+      font-weight: 600;
     }
 
     .leaflet-div-icon.map-price-icon {
@@ -1183,7 +1218,7 @@
           <span class="pulse-dot"></span>
           <span id="last-scan-label">Cargando datos...</span>
         </div>
-        <button class="btn-secondary" id="btn-map-toggle" onclick="toggleMap()">Mapa de Zaragoza</button>
+        <button class="btn-secondary" id="btn-header-config" onclick="openTabFromHeader('weights')">Configuración</button>
         <button class="btn-secondary" onclick="openAddModal()">Añadir inmueble</button>
         <button class="btn-primary" id="btn-scan" onclick="triggerDailyScan()">Actualizar portales</button>
       </div>
@@ -1196,119 +1231,134 @@
       <div class="kpi-grid" id="kpi-container"></div>
 
       <div class="nav-tabs">
-        <button class="tab-btn active" onclick="switchTab('ranking', this)">Catálogo de Viviendas</button>
-        <button class="tab-btn" onclick="switchTab('weights', this)">Pesos y Puntos por Zona</button>
-        <button class="tab-btn" onclick="switchTab('neighborhoods', this)">Tabla de Barrios Zaragoza</button>
-        <button class="tab-btn" onclick="switchTab('guide', this)">Guía Financiera e ITP Aragón</button>
+        <button class="tab-btn active" id="tab-btn-ranking" data-tab="ranking" onclick="switchTab('ranking', this)">Catálogo de Viviendas</button>
+        <button class="tab-btn" id="tab-btn-map" data-tab="map" onclick="switchTab('map', this)">Mapa de Zaragoza</button>
+        <button class="tab-btn" id="tab-btn-weights" data-tab="weights" onclick="switchTab('weights', this)">Configuración</button>
+        <button class="tab-btn" id="tab-btn-neighborhoods" data-tab="neighborhoods" onclick="switchTab('neighborhoods', this)">Tabla de Barrios Zaragoza</button>
+        <button class="tab-btn" id="tab-btn-guide" data-tab="guide" onclick="switchTab('guide', this)">Guía Financiera e ITP Aragón</button>
       </div>
 
-      <!-- PANEL DEL MAPA (SIN CABECERA COMENTADA, SALIDA POR CABECERA WEB O BOTÓN PEQUEÑO INFERIOR) -->
-      <div id="map-panel">
-        <div id="map-container"></div>
-        <div class="map-panel-footer">
-          <div style="display:flex; gap:14px; align-items:center; flex-wrap:wrap;">
-            <span>
-              <strong>Escala de Puntuación (0 – 100 pts):</strong>
-              <span style="color:#B91C1C; font-weight:700;">0 (Rojo)</span>
-              <span class="score-scale-bar"></span>
-              <span style="color:#15803D; font-weight:700;">100 (Verde)</span>
-            </span>
-            <span style="color:var(--text-muted);">· Cada marcador indica el <strong>precio base</strong> de la vivienda</span>
-          </div>
-          <button class="btn-secondary" style="padding:4px 10px; font-size:0.75rem;" onclick="toggleMap(false)">Ocultar mapa</button>
+      <!-- BARRA DE FILTROS COMPARTIDA ENTRE CATÁLOGO Y MAPA -->
+      <div class="filters-bar" id="shared-filters-bar">
+        <div class="filter-group" style="flex: 1.6;">
+          <label>Buscar por calle, barrio o referencia</label>
+          <input type="text" id="f-search" placeholder="Ej. Actur, Universidad, Venecia, La Paz, terraza..." oninput="renderProperties()" />
+        </div>
+        <div class="filter-group">
+          <label>Puntos de Zona</label>
+          <select id="f-zone" onchange="renderProperties()">
+            <option value="all">Todas las zonas</option>
+            <option value="x4">Zona de 10 puntos (Preferente)</option>
+            <option value="x3">Zona de 7.8 puntos (Media-Alta)</option>
+            <option value="x2">Zona de 5.5 puntos (Media)</option>
+            <option value="x1">Zona de 3.5 puntos (Económica)</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Tipo de Vendedor</label>
+          <select id="f-seller" onchange="renderProperties()">
+            <option value="all">Todos (Particular + Agencia)</option>
+            <option value="particular">Solo Particulares (0 € comisión)</option>
+            <option value="no_fee">Sin comisión comprador</option>
+            <option value="agency">Solo Agencias</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Portal Inmobiliario</label>
+          <select id="f-portal" onchange="renderProperties()">
+            <option value="all">Todos los portales</option>
+            <option value="Fotocasa">Fotocasa</option>
+            <option value="Pisos.com">Pisos.com</option>
+            <option value="Tecnocasa">Tecnocasa</option>
+            <option value="Redpiso">Redpiso</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Precio Máximo Compra</label>
+          <select id="f-maxprice" onchange="renderProperties()">
+            <option value="999999">Sin límite</option>
+            <option value="135000">Hasta 135.000 € (Estrategia Reforma)</option>
+            <option value="160000">Hasta 160.000 €</option>
+            <option value="185000">Hasta 185.000 €</option>
+            <option value="200000">Hasta 200.000 €</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Seguimiento</label>
+          <select id="f-status" onchange="renderProperties()">
+            <option value="active">Activos (Sin descartados)</option>
+            <option value="favorito">Solo Favoritos</option>
+            <option value="contactar">Para Contactar / Visitar</option>
+            <option value="all">Mostrar todos (incl. descartados)</option>
+          </select>
         </div>
       </div>
 
-      <!-- TAB 1: RANKING DE TARJETAS LIMPIAS -->
+      <!-- TAB 1: CATÁLOGO DE VIVIENDAS -->
       <div id="tab-ranking" class="tab-content active">
-        <div class="filters-bar">
-          <div class="filter-group" style="flex: 1.6;">
-            <label>Buscar por calle, barrio o referencia</label>
-            <input type="text" id="f-search" placeholder="Ej. Actur, Universidad, Venecia, La Paz, terraza..." oninput="renderProperties()" />
-          </div>
-          <div class="filter-group">
-            <label>Puntos de Zona</label>
-            <select id="f-zone" onchange="renderProperties()">
-              <option value="all">Todas las zonas</option>
-              <option value="x4">Zona de 10 puntos (Preferente)</option>
-              <option value="x3">Zona de 7.8 puntos (Media-Alta)</option>
-              <option value="x2">Zona de 5.5 puntos (Media)</option>
-              <option value="x1">Zona de 3.5 puntos (Económica)</option>
-            </select>
-          </div>
-          <div class="filter-group">
-            <label>Tipo de Vendedor</label>
-            <select id="f-seller" onchange="renderProperties()">
-              <option value="all">Todos (Particular + Agencia)</option>
-              <option value="particular">Solo Particulares (0 € comisión)</option>
-              <option value="no_fee">Sin comisión comprador</option>
-              <option value="agency">Solo Agencias</option>
-            </select>
-          </div>
-          <div class="filter-group">
-            <label>Portal Inmobiliario</label>
-            <select id="f-portal" onchange="renderProperties()">
-              <option value="all">Todos los portales</option>
-              <option value="Fotocasa">Fotocasa</option>
-              <option value="Pisos.com">Pisos.com</option>
-              <option value="Tecnocasa">Tecnocasa</option>
-              <option value="Redpiso">Redpiso</option>
-            </select>
-          </div>
-          <div class="filter-group">
-            <label>Precio Máximo Compra</label>
-            <select id="f-maxprice" onchange="renderProperties()">
-              <option value="999999">Sin límite</option>
-              <option value="135000">Hasta 135.000 € (Estrategia Reforma)</option>
-              <option value="160000">Hasta 160.000 €</option>
-              <option value="185000">Hasta 185.000 €</option>
-              <option value="200000">Hasta 200.000 €</option>
-            </select>
-          </div>
-          <div class="filter-group">
-            <label>Seguimiento</label>
-            <select id="f-status" onchange="renderProperties()">
-              <option value="active">Activos (Sin descartados)</option>
-              <option value="favorito">Solo Favoritos</option>
-              <option value="contactar">Para Contactar / Visitar</option>
-              <option value="all">Mostrar todos (incl. descartados)</option>
-            </select>
-          </div>
-        </div>
-
         <div id="properties-list" class="property-grid"></div>
       </div>
 
-      <!-- TAB 2: CONFIGURACIÓN DE PESOS Y PUNTOS DE ZONA -->
+      <!-- TAB 2: MAPA DE ZARAGOZA (PESTAÑA INDEPENDIENTE) -->
+      <div id="tab-map" class="tab-content">
+        <div id="map-panel">
+          <div id="map-container"></div>
+          <div class="map-panel-footer">
+            <div style="display:flex; gap:14px; align-items:center; flex-wrap:wrap;">
+              <span>
+                <strong>Escala de Puntuación (0 – 100 pts):</strong>
+                <span style="color:#B91C1C; font-weight:700;">0 (Rojo)</span>
+                <span class="score-scale-bar"></span>
+                <span style="color:#15803D; font-weight:700;">100 (Verde)</span>
+              </span>
+              <span style="color:var(--text-muted);">· Cada marcador indica el <strong>precio base</strong> de la vivienda (pulsa en un marcador para ver su foto principal y resumen)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: CONFIGURACIÓN (PERFIL ECONÓMICO, SALARIO, REQUISITOS, ZONAS Y PESOS) -->
       <div id="tab-weights" class="tab-content">
         <div class="weights-panel">
           <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; border-bottom:1px solid var(--border); padding-bottom:16px;">
             <div>
-              <h2 style="font-size:1.15rem; color:var(--text);">Configuración de Ponderaciones y Puntos por Barrio</h2>
+              <h2 style="font-size:1.15rem; color:var(--text);">Configuración de Perfil Económico, Requisitos, Barrios y Ponderaciones</h2>
               <p style="color:var(--text-muted); font-size:0.84rem;">
-                Ajusta los puntos de zona de cada barrio (10, 7.8, 5.5 o 3.5 puntos), los pesos de los 13 factores y las bonificaciones. El recálculo es instantáneo sobre SQLite sin llamadas de red.
+                Edita tu salario neto, cuota máxima mensual (ej. 700 €/mes), ahorro disponible, condiciones hipotecarias, puntos por barrio y pesos de cada criterio. El recálculo es inmediato sobre SQLite (0 tokens).
               </p>
             </div>
-            <button class="btn-primary" onclick="saveWeights()">Guardar cambios y recalcular</button>
+            <button class="btn-primary" onclick="saveWeights()">Guardar configuración y recalcular</button>
           </div>
 
           <h3 style="margin-top:20px; font-size:0.86rem; color:var(--primary); text-transform:uppercase; letter-spacing:0.04em;">
-            1. Puntuación Base por Barrio (10 / 7.8 / 5.5 / 3.5 puntos)
+            1. Perfil Económico, Salario, Hipoteca y Requisitos Mínimos
           </h3>
           <p style="font-size:0.8rem; color:var(--text-muted); margin-top:4px;">
-            Asigna a cada barrio de Zaragoza uno de los 4 niveles de puntos (10, 7.8, 5.5 o 3.5) y pulsa «Guardar cambios y recalcular».
+            Estos parámetros gobiernan el cálculo de la cuota mensual hipotecaria, la entrada necesaria, los impuestos en Aragón y las alertas de esfuerzo financiero de todas las viviendas.
+          </p>
+          <div class="fin-config-grid" id="financials-config-container"></div>
+
+          <h3 style="margin-top:28px; font-size:0.86rem; color:var(--primary); text-transform:uppercase; letter-spacing:0.04em;">
+            2. Puntuación Base por Barrio (10 / 7.8 / 5.5 / 3.5 puntos)
+          </h3>
+          <p style="font-size:0.8rem; color:var(--text-muted); margin-top:4px;">
+            Asigna a cada barrio de Zaragoza uno de los 4 niveles de puntos (10, 7.8, 5.5 o 3.5) y pulsa «Guardar configuración y recalcular».
           </p>
           <div class="zone-selector-grid" id="zone-selectors-container"></div>
 
-          <h3 style="margin-top:26px; font-size:0.86rem; color:var(--primary); text-transform:uppercase; letter-spacing:0.04em;">
-            2. Pesos de los 13 Factores de Valoración (Escala 1 a 10)
+          <h3 style="margin-top:28px; font-size:0.86rem; color:var(--primary); text-transform:uppercase; letter-spacing:0.04em;">
+            3. Pesos de los 13 Factores de Valoración (Escala 1 a 10)
           </h3>
           <div class="weight-slider-grid" id="weights-sliders-container"></div>
 
-          <h3 style="margin-top:26px; font-size:0.86rem; color:var(--primary); text-transform:uppercase; letter-spacing:0.04em;">
-            3. Bonificaciones Fijas y Penalización por Agencia (Puntos Directos)
+          <h3 style="margin-top:28px; font-size:0.86rem; color:var(--primary); text-transform:uppercase; letter-spacing:0.04em;">
+            4. Bonificaciones Fijas y Penalización por Agencia (Puntos Directos)
           </h3>
           <div class="weight-slider-grid" id="bonuses-sliders-container" style="margin-top:12px;"></div>
+
+          <div style="margin-top:24px; padding-top:16px; border-top:1px solid var(--border); display:flex; justify-content:flex-end;">
+            <button class="btn-primary" onclick="saveWeights()">Guardar configuración y recalcular</button>
+          </div>
         </div>
       </div>
 
@@ -1496,20 +1546,24 @@
     function renderKPIs() {
       const props = APP_STATE.properties.filter(p => !p.hard_discard && p.user_status !== 'descartado');
       const particulares = props.filter(p => !p.is_agency);
-      const sweetDeals = props.filter(p => p.price <= 135000);
-      const topProp = props[0];
       const fin = APP_STATE.profile.financials;
+      const sweetSpotPrice = fin.sweet_spot_reform_price_max_eur || 135000;
+      const sweetDeals = props.filter(p => p.price <= sweetSpotPrice);
+      const topProp = props[0];
+      const debtPct = fin.net_monthly_income_eur > 0
+        ? ((fin.max_monthly_mortgage_eur / fin.net_monthly_income_eur) * 100).toFixed(1).replace('.0', '')
+        : '33';
 
       const kpis = [
         {
           label: 'Límite Financiero Mensual',
           value: `${fmtEur(fin.max_monthly_mortgage_eur)}/mes`,
-          sub: `1/3 de ${fmtEur(fin.net_monthly_income_eur)} netos · Ahorro ${fmtEur(fin.available_savings_min_eur)}-${fmtEur(fin.available_savings_max_eur)}`
+          sub: `${debtPct}% de ${fmtEur(fin.net_monthly_income_eur)} netos · Ahorro ${fmtEur(fin.available_savings_min_eur)}-${fmtEur(fin.available_savings_max_eur)}`
         },
         {
           label: 'Candidatos Válidos',
           value: `${props.length} viviendas`,
-          sub: `De ${APP_STATE.properties.length} analizadas en 4 portales`
+          sub: `De ${APP_STATE.properties.length} analizadas · Tope ${fmtEur(fin.target_price_max_eur || 200000)}`
         },
         {
           label: 'Trato Directo vs Agencia',
@@ -1517,7 +1571,7 @@
           sub: `${props.length - particulares.length} de agencia (penalizados en puntos)`
         },
         {
-          label: 'Oportunidades < 135.000 €',
+          label: `Oportunidades <= ${fmtEur(sweetSpotPrice)}`,
           value: `${sweetDeals.length} viviendas`,
           sub: `Aptas para estrategia de reforma eficiente`
         },
@@ -1593,7 +1647,7 @@
       const filtered = getFilteredProperties();
       CURRENT_FILTERED_IDS = filtered.map(p => p.id);
 
-      if (MAP_INSTANCE && document.getElementById('map-panel').classList.contains('visible')) {
+      if (MAP_INSTANCE) {
         updateMapMarkers(filtered);
       }
 
@@ -1838,11 +1892,11 @@
                     <div style="font-size:0.78rem; color:var(--text-secondary);">${fmtEur(ev.price_per_sqm)}/m² construidos</div>
                   </div>
                   <div style="text-align:right;">
-                    <div style="font-size:0.7rem; text-transform:uppercase; color:var(--primary); font-weight:700; letter-spacing:0.04em;">Cuota Hipoteca (90% LTV)</div>
+                    <div style="font-size:0.7rem; text-transform:uppercase; color:var(--primary); font-weight:700; letter-spacing:0.04em;">Cuota Hipoteca (${fin.ltv_pct || 90}% LTV · ${fin.mortgage_years || 30} años)</div>
                     <div style="font-size:1.35rem; font-weight:700; color:${fin.fits_700_rule ? 'var(--success)' : 'var(--warning)'};">
                       ${fmtEur(fin.monthly_quota_90_eur)}/mes
                     </div>
-                    <div style="font-size:0.75rem; color:var(--text-secondary);">Base 1-10: ${p.score_100.toFixed(1)} · Bonos/Zona/Agencia: ${ev.bonus_points >= 0 ? '+' : ''}${ev.bonus_points}</div>
+                    <div style="font-size:0.75rem; color:var(--text-secondary);">Tope perfil: ${fmtEur(fin.max_monthly_mortgage_eur || 700)}/mes · Base 1-10: ${p.score_100.toFixed(1)} · Bonos: ${ev.bonus_points >= 0 ? '+' : ''}${ev.bonus_points}</div>
                   </div>
                 </div>
 
@@ -2034,10 +2088,222 @@
       `;
     }
 
+    function syncSalaryDebtPreview() {
+      const salInput = document.querySelector('[data-fin-key="net_monthly_income_eur"]');
+      const mortInput = document.querySelector('[data-fin-key="max_monthly_mortgage_eur"]');
+      const previewEl = document.getElementById('fin-debt-ratio-preview');
+      if (!salInput || !mortInput || !previewEl) return;
+      const sal = parseFloat(salInput.value) || 0;
+      const mort = parseFloat(mortInput.value) || 0;
+      const pct = sal > 0 ? ((mort / sal) * 100).toFixed(1) : '0.0';
+      const color = pct <= 35 ? 'var(--success)' : (pct <= 40 ? 'var(--warning)' : 'var(--danger)');
+      previewEl.innerHTML = `Ratio de endeudamiento: <strong style="color:${color};">${pct}%</strong> sobre salario neto (recomendado Banco de España <= 33.3%) · <a href="javascript:void(0)" onclick="applyOneThirdRule()" style="color:var(--primary); font-weight:600; text-decoration:underline;">Ajustar cuota a 1/3 del salario (${Math.round(sal / 3)} €/mes)</a>`;
+    }
+
+    function applyOneThirdRule() {
+      const salInput = document.querySelector('[data-fin-key="net_monthly_income_eur"]');
+      const mortInput = document.querySelector('[data-fin-key="max_monthly_mortgage_eur"]');
+      if (!salInput || !mortInput) return;
+      const sal = parseFloat(salInput.value) || 0;
+      mortInput.value = Math.round(sal / 3);
+      syncSalaryDebtPreview();
+    }
+
     function renderWeightsSliders() {
+      const fin = APP_STATE.profile.financials || {};
+      const req = APP_STATE.profile.hard_and_soft_requirements || {};
       const factors = APP_STATE.profile.scoring_factors_1_to_10;
       const bonuses = APP_STATE.profile.fixed_bonuses;
       const zm = APP_STATE.profile.zone_multipliers || {};
+
+      // 0. Renderizar Parámetros Económicos, Hipotecarios y Requisitos del Perfil
+      const finFields = [
+        {
+          key: 'net_monthly_income_eur',
+          group: 'fin',
+          label: 'Salario Neto Mensual (€/mes)',
+          value: fin.net_monthly_income_eur ?? 2100,
+          step: 50,
+          min: 500,
+          max: 25000,
+          hint: 'Ingresos netos mensuales del comprador para medir esfuerzo hipotecario.'
+        },
+        {
+          key: 'max_monthly_mortgage_eur',
+          group: 'fin',
+          label: 'Cuota Hipotecaria Máxima Objetivo (€/mes)',
+          value: fin.max_monthly_mortgage_eur ?? 700,
+          step: 10,
+          min: 200,
+          max: 10000,
+          hint: '<span id="fin-debt-ratio-preview">Tope mensual deseado para puntuar con máxima nota de viabilidad.</span>'
+        },
+        {
+          key: 'available_savings_min_eur',
+          group: 'fin',
+          label: 'Ahorro Disponible Mínimo (€)',
+          value: fin.available_savings_min_eur ?? 30000,
+          step: 1000,
+          min: 0,
+          max: 500000,
+          hint: 'Base conservadora de ahorros propios disponibles para entrada e impuestos.'
+        },
+        {
+          key: 'available_savings_max_eur',
+          group: 'fin',
+          label: 'Ahorro Disponible Máximo / Colchón Total (€)',
+          value: fin.available_savings_max_eur ?? 60000,
+          step: 1000,
+          min: 0,
+          max: 500000,
+          hint: 'Límite de liquidez (entrada + ITP + notaría + agencia) antes de penalizar el inmueble.'
+        },
+        {
+          key: 'target_price_max_eur',
+          group: 'fin',
+          label: 'Precio Máximo Objetivo de Compra (€)',
+          value: fin.target_price_max_eur ?? 200000,
+          step: 2500,
+          min: 50000,
+          max: 1000000,
+          hint: 'Presupuesto máximo de referencia para viviendas listas para entrar a vivir.'
+        },
+        {
+          key: 'sweet_spot_reform_price_max_eur',
+          group: 'fin',
+          label: 'Precio Objetivo Estrategia Reforma (€)',
+          value: fin.sweet_spot_reform_price_max_eur ?? 135000,
+          step: 2500,
+          min: 40000,
+          max: 600000,
+          hint: 'Umbral de compra económica que permite financiar reforma integral con plusvalía.'
+        },
+        {
+          key: 'default_ltv_pct',
+          group: 'fin',
+          label: 'Porcentaje Financiación Hipotecaria LTV (%)',
+          value: fin.default_ltv_pct ?? 90,
+          step: 1,
+          min: 50,
+          max: 100,
+          hint: 'Porcentaje financiado por el banco sobre el precio de compra (ej. 80% estándar, 90% joven).'
+        },
+        {
+          key: 'mortgage_years',
+          group: 'fin',
+          label: 'Plazo de Amortización Hipotecaria (Años)',
+          value: fin.mortgage_years ?? 30,
+          step: 1,
+          min: 5,
+          max: 40,
+          hint: 'Duración del préstamo hipotecario en años para el cálculo de la cuota mensual.'
+        },
+        {
+          key: 'estimated_interest_rate_tin',
+          group: 'fin',
+          label: 'Tipo de Interés Fijo Estimado TIN (%)',
+          value: fin.estimated_interest_rate_tin ?? 2.85,
+          step: 0.05,
+          min: 0.5,
+          max: 10,
+          hint: 'Interés anual aplicado en la fórmula de amortización francesa.'
+        },
+        {
+          key: 'age_under_35',
+          group: 'fin_bool',
+          label: 'Bonificación Fiscal Menor de 35 Años (Aragón)',
+          value: fin.age_under_35 !== false,
+          hint: 'Aplica ITP reducido en Aragón si el comprador es menor de 35 años y el inmueble <= 100.000 €.'
+        },
+        {
+          key: 'aragon_itp_young_under_100k_pct',
+          group: 'fin',
+          label: 'Impuesto ITP Aragón Reducido Joven (%)',
+          value: fin.aragon_itp_young_under_100k_pct ?? 4.0,
+          step: 0.5,
+          min: 0,
+          max: 15,
+          hint: 'Tipo reducido de Transmisiones Patrimoniales en Aragón (por defecto 4%).'
+        },
+        {
+          key: 'aragon_itp_general_pct',
+          group: 'fin',
+          label: 'Impuesto ITP Aragón General (%)',
+          value: fin.aragon_itp_general_pct ?? 8.0,
+          step: 0.5,
+          min: 0,
+          max: 15,
+          hint: 'Tipo general de Transmisiones Patrimoniales en Aragón (por defecto 8%).'
+        },
+        {
+          key: 'notary_registry_appraisal_eur',
+          group: 'fin',
+          label: 'Gastos Fijos Notaría, Registro y Tasación (€)',
+          value: fin.notary_registry_appraisal_eur ?? 2200,
+          step: 100,
+          min: 500,
+          max: 10000,
+          hint: 'Coste fijo estimado de escrituración, gestoría, registro y tasación oficial.'
+        },
+        {
+          key: 'min_sqm_strict',
+          group: 'req',
+          label: 'Superficie Construida Mínima Estricta (m²)',
+          value: req.min_sqm_strict ?? 65,
+          step: 1,
+          min: 30,
+          max: 250,
+          hint: 'Las viviendas con menos metros cuadrados quedan descartadas automáticamente.'
+        },
+        {
+          key: 'min_bedrooms',
+          group: 'req',
+          label: 'Número Mínimo de Dormitorios',
+          value: req.min_bedrooms ?? 2,
+          step: 1,
+          min: 1,
+          max: 6,
+          hint: 'Mínimo de habitaciones requerido para no descartar la vivienda.'
+        },
+        {
+          key: 'min_floor',
+          group: 'req',
+          label: 'Altura de Planta Mínima Exigida',
+          value: req.min_floor ?? 1,
+          step: 1,
+          min: 0,
+          max: 10,
+          hint: 'Indica 1 para descartar plantas bajas (0ª planta) o 0 para permitir bajos.'
+        }
+      ];
+
+      document.getElementById('financials-config-container').innerHTML = finFields.map(f => {
+        if (f.group === 'fin_bool') {
+          return `
+            <div class="fin-config-item">
+              <label>${f.label}</label>
+              <select data-fin-bool-key="${f.key}">
+                <option value="true" ${f.value ? 'selected' : ''}>Sí, aplicar perfil menor de 35 años</option>
+                <option value="false" ${!f.value ? 'selected' : ''}>No, aplicar tramo general</option>
+              </select>
+              <div class="fin-hint">${f.hint}</div>
+            </div>
+          `;
+        }
+        const attrName = f.group === 'req' ? `data-req-key="${f.key}"` : `data-fin-key="${f.key}"`;
+        const onInputHandler = (f.key === 'net_monthly_income_eur' || f.key === 'max_monthly_mortgage_eur')
+          ? 'oninput="syncSalaryDebtPreview()"'
+          : '';
+        return `
+          <div class="fin-config-item">
+            <label>${f.label}</label>
+            <input type="number" ${attrName} value="${f.value}" step="${f.step}" min="${f.min}" max="${f.max}" ${onInputHandler} />
+            <div class="fin-hint">${f.hint}</div>
+          </div>
+        `;
+      }).join('');
+
+      syncSalaryDebtPreview();
 
       // 1. Renderizar Selector de Puntos por Barrio (10, 7.8, 5.5, 3.5)
       const allNeighborhoods = [];
@@ -2105,6 +2371,25 @@
     }
 
     async function saveWeights() {
+      const financials = {};
+      document.querySelectorAll('[data-fin-key]').forEach(el => {
+        const val = parseFloat(el.value);
+        if (!Number.isNaN(val)) {
+          financials[el.getAttribute('data-fin-key')] = val;
+        }
+      });
+      document.querySelectorAll('[data-fin-bool-key]').forEach(el => {
+        financials[el.getAttribute('data-fin-bool-key')] = (el.value === 'true');
+      });
+
+      const requirements = {};
+      document.querySelectorAll('[data-req-key]').forEach(el => {
+        const val = parseInt(el.value, 10);
+        if (!Number.isNaN(val)) {
+          requirements[el.getAttribute('data-req-key')] = val;
+        }
+      });
+
       const weights = {};
       document.querySelectorAll('[data-weight-key]').forEach(el => {
         weights[el.getAttribute('data-weight-key')] = parseFloat(el.value);
@@ -2121,13 +2406,13 @@
       const res = await fetch('/api/weights', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ weights, bonuses, zone_assignments })
+        body: JSON.stringify({ financials, requirements, weights, bonuses, zone_assignments })
       });
       const data = await res.json();
       if (data.ok) {
         APP_STATE = data.state;
         renderAll();
-        showToast('Configuración de zonas y pesos guardada. Ranking recalculado.');
+        showToast('Parámetros económicos, zonas y pesos guardados. Catálogo y mapa recalculados.');
       }
     }
 
@@ -2319,52 +2604,55 @@
       }
     }
 
-    function switchTab(tabName, btnEl) {
-      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-      document.getElementById(`tab-${tabName}`).classList.add('active');
-      btnEl.classList.add('active');
+    function ensureMapInitialized() {
+      if (!MAP_INSTANCE) {
+        MAP_INSTANCE = L.map('map-container').setView([41.6488, -0.8891], 13);
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19,
+          attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(MAP_INSTANCE);
+      }
+      setTimeout(() => {
+        MAP_INSTANCE.invalidateSize();
+        updateMapMarkers(getFilteredProperties());
+      }, 90);
     }
 
-    function toggleMap(forceState) {
-      // Si el usuario está dentro de una ficha de vivienda, volvemos al panel principal para mostrar el mapa
+    function switchTab(tabName, btnEl) {
       if (window.location.hash && window.location.hash.startsWith('#/piso/')) {
         closePropertyDetail();
       }
-      const panel = document.getElementById('map-panel');
-      const btn = document.getElementById('btn-map-toggle');
-      const shouldBeVisible = typeof forceState === 'boolean'
-        ? forceState
-        : !panel.classList.contains('visible');
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
 
-      panel.classList.toggle('visible', shouldBeVisible);
-      btn.classList.toggle('btn-map-active', shouldBeVisible);
-      btn.textContent = shouldBeVisible ? 'Mapa Activo (Pulsar para salir)' : 'Mapa de Zaragoza';
+      const targetTab = document.getElementById(`tab-${tabName}`);
+      if (targetTab) targetTab.classList.add('active');
 
-      if (shouldBeVisible) {
-        if (!MAP_INSTANCE) {
-          MAP_INSTANCE = L.map('map-container').setView([41.6488, -0.8891], 13);
-          L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-            attribution: '&copy; OpenStreetMap contributors'
-          }).addTo(MAP_INSTANCE);
-        }
-        setTimeout(() => {
-          MAP_INSTANCE.invalidateSize();
-          updateMapMarkers(getFilteredProperties());
-          panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }, 120);
+      const matchingBtn = btnEl || document.querySelector(`.tab-btn[data-tab="${tabName}"]`);
+      if (matchingBtn) matchingBtn.classList.add('active');
+
+      const headerCfgBtn = document.getElementById('btn-header-config');
+      if (headerCfgBtn) {
+        headerCfgBtn.classList.toggle('btn-map-active', tabName === 'weights');
+      }
+
+      const filtersBar = document.getElementById('shared-filters-bar');
+      if (filtersBar) {
+        filtersBar.style.display = (tabName === 'ranking' || tabName === 'map') ? 'flex' : 'none';
+      }
+
+      if (tabName === 'map') {
+        ensureMapInitialized();
       }
     }
 
-    window.addEventListener('keydown', (ev) => {
-      if (ev.key === 'Escape') {
-        const panel = document.getElementById('map-panel');
-        if (panel && panel.classList.contains('visible')) {
-          toggleMap(false);
-        }
+    function openTabFromHeader(tabName) {
+      switchTab(tabName);
+      const navEl = document.querySelector('.nav-tabs');
+      if (navEl) {
+        navEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }
-    });
+    }
 
     function scoreToRedGreenColor(score) {
       // Escala de 0 a 100 puntos: 0 = Rojo intenso (hue 0°), 50-60 = Ámbar (hue 38°), 100 = Verde esmeralda (hue 142°)

@@ -237,9 +237,13 @@ def estimate_renovation_and_financials(listing: Dict[str, Any], profile: Dict[st
         cost_living_rooms = 2500
         estimated_reform_eur = cost_windows_insulation + cost_kitchen + cost_bathroom + cost_living_rooms
 
-    # Impuestos Aragón (<35 años)
-    itp_pct = 6.0 if (fin.get("age_under_35", True) and price <= 150000) else 7.5
-    taxes_and_notary_eur = round(price * (itp_pct / 100.0) + fin.get("notary_registry_appraisal_eur", 2200))
+    # Impuestos Aragón (<35 años vs general)
+    age_under_35 = bool(fin.get("age_under_35", True))
+    itp_young_pct = float(fin.get("aragon_itp_young_under_100k_pct", 6.0))
+    itp_general_pct = float(fin.get("aragon_itp_general_pct", 8.0))
+    itp_pct = itp_young_pct if (age_under_35 and price <= 150000) else itp_general_pct
+    notary_eur = float(fin.get("notary_registry_appraisal_eur", 2200))
+    taxes_and_notary_eur = round(price * (itp_pct / 100.0) + notary_eur)
 
     # Comisión de agencia estimada si vende agencia y no está exento (3% + IVA = 3.63%, mín 3.630 €)
     if is_agency and not buyer_fee_exempt:
@@ -249,25 +253,34 @@ def estimate_renovation_and_financials(listing: Dict[str, Any], profile: Dict[st
 
     total_project_cost_eur = round(price + taxes_and_notary_eur + agency_fee_eur + estimated_reform_eur)
 
-    savings_target = 52000.0
+    ltv_pct = max(10.0, min(100.0, float(fin.get("default_ltv_pct", 90.0))))
+    ltv_ratio = ltv_pct / 100.0
+    min_down_ratio = max(0.0, 1.0 - ltv_ratio)
+
+    savings_max = float(fin.get("available_savings_max_eur", 60000))
+    savings_target = max(15000.0, savings_max * 0.87)
     max_cash_for_purchase = max(
-        price * 0.10 + taxes_and_notary_eur + agency_fee_eur,
+        price * min_down_ratio + taxes_and_notary_eur + agency_fee_eur,
         savings_target - estimated_reform_eur,
     )
-    down_payment_for_price = max(price * 0.10, max_cash_for_purchase - taxes_and_notary_eur - agency_fee_eur)
-    loan_amount = max(0.0, min(price * 0.90, price - down_payment_for_price))
+    down_payment_for_price = max(price * min_down_ratio, max_cash_for_purchase - taxes_and_notary_eur - agency_fee_eur)
+    loan_amount = max(0.0, min(price * ltv_ratio, price - down_payment_for_price))
 
-    annual_rate = fin.get("estimated_interest_rate_tin", 2.75) / 100.0
+    annual_rate = float(fin.get("estimated_interest_rate_tin", 2.75)) / 100.0
     r_month = annual_rate / 12.0
-    n_months = fin.get("mortgage_years", 30) * 12
+    n_months = max(1, int(fin.get("mortgage_years", 30))) * 12
     if loan_amount > 0 and r_month > 0:
         monthly_quota = loan_amount * (r_month * (1 + r_month) ** n_months) / ((1 + r_month) ** n_months - 1)
+    elif loan_amount > 0:
+        monthly_quota = loan_amount / n_months
     else:
         monthly_quota = 0.0
 
     cash_needed_total = round((price - loan_amount) + taxes_and_notary_eur + agency_fee_eur + estimated_reform_eur)
-    fits_monthly_limit = monthly_quota <= fin.get("max_monthly_mortgage_eur", 700)
-    fits_savings_limit = cash_needed_total <= (fin.get("available_savings_max_eur", 60000) + 5000)
+    max_monthly_limit = float(fin.get("max_monthly_mortgage_eur", 700))
+    fits_monthly_limit = monthly_quota <= max_monthly_limit
+    fits_savings_limit = cash_needed_total <= (savings_max + 5000)
+    sweet_spot_max = float(fin.get("sweet_spot_reform_price_max_eur", 135000))
 
     return {
         "itp_pct": itp_pct,
@@ -285,19 +298,26 @@ def estimate_renovation_and_financials(listing: Dict[str, Any], profile: Dict[st
         },
         "total_project_cost_eur": total_project_cost_eur,
         "loan_amount_eur": round(loan_amount),
+        "ltv_pct": ltv_pct,
         "monthly_mortgage_eur": round(monthly_quota, 2),
+        "max_monthly_mortgage_eur": max_monthly_limit,
         "cash_needed_total_eur": cash_needed_total,
         "fits_monthly_limit_700": fits_monthly_limit,
         "fits_savings_limit_60k": fits_savings_limit,
-        "is_sweet_spot_reform_deal": (price <= 138000 and total_project_cost_eur <= 178000),
+        "is_sweet_spot_reform_deal": (price <= (sweet_spot_max + 3000) and total_project_cost_eur <= (sweet_spot_max + 43000)),
     }
 
 
-def evaluate_Discard_Criteria(listing: Dict[str, Any]) -> Tuple[bool, List[str]]:
+def evaluate_Discard_Criteria(listing: Dict[str, Any], profile: Optional[Dict[str, Any]] = None) -> Tuple[bool, List[str]]:
     """
     Comprueba si el inmueble incumple algún filtro duro o presenta alertas críticas.
     """
     reasons = []
+    reqs = (profile or {}).get("hard_and_soft_requirements", {})
+    min_sqm_strict = float(reqs.get("min_sqm_strict", 60))
+    min_bedrooms = int(reqs.get("min_bedrooms", 3))
+    min_floor = int(reqs.get("min_floor", 2))
+
     desc = f"{listing.get('title', '')} {listing.get('description', '')}".lower()
     url_clean = (listing.get("url") or "").lower().replace("_", " ").replace("-", " ")
     loc_text = f"{listing.get('neighborhood', '')} {listing.get('address', '')} {listing.get('title', '')} {url_clean}".lower()
@@ -323,19 +343,19 @@ def evaluate_Discard_Criteria(listing: Dict[str, Any]) -> Tuple[bool, List[str]]
         reasons.append("Descartado: Inmueble actualmente alquilado a terceros")
 
     sqm = float(listing.get("sqm") or 0)
-    if 0 < sqm < 60:
-        reasons.append(f"Descartado: Superficie ({int(sqm)} m²) inferior al mínimo estricto de 60 m²")
+    if 0 < sqm < min_sqm_strict:
+        reasons.append(f"Descartado: Superficie ({int(sqm)} m²) inferior al mínimo estricto de {int(min_sqm_strict)} m²")
 
     bedrooms = int(listing.get("bedrooms") or 0)
-    if 0 < bedrooms < 3:
-        reasons.append(f"Penalización Fuerte: Solo {bedrooms} hab. (buscas mínimo 3 hab: 1 principal + 2 despachos/invitados)")
+    if 0 < bedrooms < min_bedrooms:
+        reasons.append(f"Penalización Fuerte: Solo {bedrooms} hab. (buscas mínimo {min_bedrooms} hab.)")
 
     if listing.get("has_elevator") is False:
         reasons.append("Penalización Fuerte: Sin ascensor (riesgo de derrama futura de instalación y peor accesibilidad)")
 
     floor = listing.get("floor_num")
-    if floor is not None and floor < 2:
-        reasons.append(f"Penalización: Planta baja o 1ª ({floor}ª planta; prefieres >= 2ª planta por luz e intimidad)")
+    if floor is not None and floor < min_floor:
+        reasons.append(f"Penalización: Planta {floor}ª (prefieres >= {min_floor}ª planta por luz e intimidad)")
 
     hard_discard = any(r.startswith("Descartado:") for r in reasons)
     return hard_discard, reasons
@@ -381,7 +401,7 @@ def score_listing(listing: Dict[str, Any], profile: Optional[Dict[str, Any]] = N
         url_text=listing.get("url", ""),
     )
     fin_est = estimate_renovation_and_financials(listing, profile)
-    hard_discard, alerts = evaluate_Discard_Criteria(listing)
+    hard_discard, alerts = evaluate_Discard_Criteria(listing, profile)
 
     avg_zone_sqm = ZARAGOZA_AVG_SQM_PRICES.get(matched_nb, 2100)
     total_cost_per_sqm = fin_est["total_project_cost_eur"] / sqm
@@ -390,9 +410,10 @@ def score_listing(listing: Dict[str, Any], profile: Optional[Dict[str, Any]] = N
     audit_evidence: Dict[str, Dict[str, Any]] = {}
 
     # 1. Precio y Rentabilidad Post-Reforma (1-10)
+    sweet_max_eur = float(profile.get("financials", {}).get("sweet_spot_reform_price_max_eur", 135000))
     s_price = 6.0 + (discount_ratio * 10.0)
     sweet_bonus = 0.0
-    if price <= 135000 and fin_est["total_project_cost_eur"] < (avg_zone_sqm * sqm * 0.92):
+    if price <= sweet_max_eur and fin_est["total_project_cost_eur"] < (avg_zone_sqm * sqm * 0.92):
         sweet_bonus = 1.2
         s_price += sweet_bonus
     quota_penalty = 0.0
@@ -404,7 +425,7 @@ def score_listing(listing: Dict[str, Any], profile: Optional[Dict[str, Any]] = N
         "score": s_price,
         "status": "verificado",
         "source": f"Precio anuncio ({int(price):,} € / {int(sqm)} m² = {int(eur_per_sqm)} €/m²) vs Media barrio {matched_nb} ({avg_zone_sqm} €/m²)",
-        "formula": f"6.0 + (({avg_zone_sqm} - {int(total_cost_per_sqm)} coste_total/m²) / {avg_zone_sqm}) × 10 {'+ 1.2 bonus <135k' if sweet_bonus else ''}{' - 2.0 exceso cuota' if quota_penalty else ''}",
+        "formula": f"6.0 + (({avg_zone_sqm} - {int(total_cost_per_sqm)} coste_total/m²) / {avg_zone_sqm}) × 10 {'+ 1.2 bonus estrategia reforma' if sweet_bonus else ''}{' - 2.0 exceso cuota máx.' if quota_penalty else ''}",
         "detail": f"Coste total tras impuestos, agencia y reforma estimada: {int(fin_est['total_project_cost_eur']):,} € ({int(total_cost_per_sqm)} €/m² vs {avg_zone_sqm} €/m² reformado en {matched_nb}).",
     }
 
