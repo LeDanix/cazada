@@ -118,14 +118,23 @@ def load_buyer_profile() -> Dict[str, Any]:
         return json.load(f)
 
 
-def classify_neighborhood(neighborhood_text: str, address_text: str, profile: Dict[str, Any]) -> Tuple[str, float, float, str]:
+def classify_neighborhood(
+    neighborhood_text: str,
+    address_text: str,
+    profile: Dict[str, Any],
+    title_text: str = "",
+    url_text: str = "",
+) -> Tuple[str, float, float, str]:
     """
     Devuelve (tier_key, multiplier, base_score_10, matched_neighborhood)
-    basado estrictamente en el texto del barrio/dirección del anuncio.
+    basado estrictamente en el texto del barrio, dirección, título y URL del anuncio.
     """
     nb_low = (neighborhood_text or "").lower()
     addr_low = (address_text or "").lower()
-    combined = f"{nb_low} {addr_low}"
+    title_low = (title_text or "").lower()
+    url_clean = (url_text or "").lower().replace("_", " ").replace("-", " ")
+    specific_low = f"{addr_low} {title_low}"
+    combined = f"{nb_low} {addr_low} {title_low} {url_clean}"
     zm = profile["zone_multipliers"]
 
     def find_nb_tier(target_nb: str) -> Optional[Tuple[str, float, float, str]]:
@@ -136,26 +145,26 @@ def classify_neighborhood(neighborhood_text: str, address_text: str, profile: Di
                     return t_key, float(t_data["multiplier"]), float(t_data["base_score_10"]), nb
         return None
 
-    # 1. Si la dirección/calle menciona explícitamente calles de La Paz o Torrero, asignar a La Paz / Torrero
-    if any(k in addr_low for k in ["zafiro", "la paz", "cuarta avenida", "lasierra purroy", "villa de pau", "ortiz de zárate", "ortiz de zarate"]):
+    # 1. Si la dirección/calle menciona explícitamente calles de La Paz o Torrero, asignar a La Paz
+    if any(k in specific_low for k in ["zafiro", "la paz", "cuarta avenida", "lasierra purroy", "villa de pau", "ortiz de zárate", "ortiz de zarate"]):
         res = find_nb_tier("La Paz")
         if res:
             return res
 
-    # 2. Primero buscar coincidencia exacta en la dirección específica (address_text)
+    # 2. Primero buscar coincidencia exacta en la dirección o título específico
     for tier_key in ["x4", "x3", "x2", "x1"]:
         tier_data = zm[tier_key]
         for nb in tier_data["neighborhoods"]:
-            if nb.lower() in addr_low:
+            if nb.lower() in specific_low:
                 return tier_key, float(tier_data["multiplier"]), float(tier_data["base_score_10"]), nb
 
     # 3. Si el portal devuelve el distrito agrupado "Torrero - La Paz - Parque Venecia" sin mencionar Venecia en la dirección, usar La Paz / Torrero
-    if "torrero" in nb_low and "la paz" in nb_low and "venecia" in nb_low and "venecia" not in addr_low:
+    if "torrero" in combined and "la paz" in combined and "venecia" in combined and "venecia" not in specific_low:
         res = find_nb_tier("La Paz") or find_nb_tier("Torrero")
         if res:
             return res
 
-    # 4. Búsqueda general en barrio + dirección
+    # 4. Búsqueda general en barrio + dirección + título + URL
     for tier_key in ["x4", "x3", "x2", "x1"]:
         tier_data = zm[tier_key]
         for nb in tier_data["neighborhoods"]:
@@ -163,17 +172,19 @@ def classify_neighborhood(neighborhood_text: str, address_text: str, profile: Di
                 return tier_key, float(tier_data["multiplier"]), float(tier_data["base_score_10"]), nb
 
     if any(k in combined for k in ["gómez laguna", "gomez laguna", "aragonia", "audiorama", "parque grande", "gran vía", "gran via"]):
-        return "x4", 4.0, 10.0, "Universidad / Romareda"
+        return find_nb_tier("Romareda") or ("x4", 10.0, 10.0, "Romareda")
     if any(k in combined for k in ["paseo teruel", "puerta del carmen", "hernán cortés", "hernan cortes", "doctor cerrada", "paseo pamplona", "constitución", "constitucion", "damas", "centro"]):
-        return "x3", 3.0, 7.8, "Centro / Sagasta"
-    if any(k in combined for k in ["vadorrey", "la jota", "azucarera", "cogullada"]):
-        return "x2", 2.0, 5.5, "Arrabal / Barrio Jesús"
-    if any(k in combined for k in ["san josé", "san jose", "tenor fleta", "cesáreo alierta", "cesareo alierta", "avenida madrid", "avda madrid"]):
-        return "x2", 2.0, 5.5, "San José / Miraflores"
-    if any(k in combined for k in ["casco antiguo", "casco histórico", "casco historico", "el pilar", "san miguel", "predicadores"]):
-        return "x2", 2.0, 5.5, "Casco Histórico"
+        return find_nb_tier("Centro") or ("x3", 7.8, 7.8, "Centro")
+    if any(k in combined for k in ["vadorrey", "la jota", "azucarera", "cogullada", "el rabal"]):
+        return find_nb_tier("Arrabal") or ("x2", 5.5, 5.5, "Arrabal")
+    if any(k in combined for k in ["conde de la viñaza", "conde de la vinaza", "duquesa villahermosa", "vía univérsitas", "via universitas", "avenida madrid", "avda madrid"]):
+        return find_nb_tier("Delicias") or ("x1", 3.5, 3.5, "Delicias")
+    if any(k in combined for k in ["san josé", "san jose", "tenor fleta", "cesáreo alierta", "cesareo alierta"]):
+        return find_nb_tier("San José") or ("x2", 5.5, 5.5, "San José")
+    if any(k in combined for k in ["casco antiguo", "casco histórico", "casco historico", "el pilar", "san miguel", "predicadores", "san jorge", "don jaime", "calle de las armas"]):
+        return find_nb_tier("Magdalena") or ("x2", 5.5, 5.5, "Casco Histórico")
 
-    return "x2", 2.0, 5.5, neighborhood_text or "Zaragoza Capital"
+    return "x2", 5.5, 5.5, neighborhood_text or "Zaragoza Capital"
 
 
 def estimate_renovation_and_financials(listing: Dict[str, Any], profile: Dict[str, Any]) -> Dict[str, Any]:
@@ -288,7 +299,8 @@ def evaluate_Discard_Criteria(listing: Dict[str, Any]) -> Tuple[bool, List[str]]
     """
     reasons = []
     desc = f"{listing.get('title', '')} {listing.get('description', '')}".lower()
-    loc_text = f"{listing.get('neighborhood', '')} {listing.get('address', '')} {listing.get('title', '')}".lower()
+    url_clean = (listing.get("url") or "").lower().replace("_", " ").replace("-", " ")
+    loc_text = f"{listing.get('neighborhood', '')} {listing.get('address', '')} {listing.get('title', '')} {url_clean}".lower()
 
     if any(k in loc_text for k in [
         "barrios rurales", "casetas", "villarrapa", "garrapinillos", "monzalbarba",
@@ -362,7 +374,11 @@ def score_listing(listing: Dict[str, Any], profile: Optional[Dict[str, Any]] = N
     desc = f"{listing.get('title', '')} {listing.get('description', '')}".lower()
 
     tier_key, zone_mult, zone_base_10, matched_nb = classify_neighborhood(
-        listing.get("neighborhood", ""), listing.get("address", ""), profile
+        listing.get("neighborhood", ""),
+        listing.get("address", ""),
+        profile,
+        title_text=listing.get("title", ""),
+        url_text=listing.get("url", ""),
     )
     fin_est = estimate_renovation_and_financials(listing, profile)
     hard_discard, alerts = evaluate_Discard_Criteria(listing)
@@ -392,14 +408,14 @@ def score_listing(listing: Dict[str, Any], profile: Optional[Dict[str, Any]] = N
         "detail": f"Coste total tras impuestos, agencia y reforma estimada: {int(fin_est['total_project_cost_eur']):,} € ({int(total_cost_per_sqm)} €/m² vs {avg_zone_sqm} €/m² reformado en {matched_nb}).",
     }
 
-    # 2. Localización por Barrio (x4/x3/x2/x1) (1-10)
+    # 2. Localización por Barrio (10 / 7.8 / 5.5 / 3.5 pts)
     s_zone = round(zone_base_10, 1)
     audit_evidence["neighborhood_tier"] = {
         "score": s_zone,
         "status": "verificado",
         "source": f"Barrio detectado en anuncio: '{matched_nb}'",
-        "formula": f"Tabla de tu perfil: Grupo {tier_key.upper()} (multiplicador x{int(zone_mult)}) → {s_zone}/10",
-        "detail": f"Ubicado en {matched_nb}, clasificado en tu perfil dentro del grupo {tier_key.upper()}.",
+        "formula": f"Valoración asignada al barrio {matched_nb} en tu perfil → {s_zone} / 10 puntos",
+        "detail": f"Ubicado en {matched_nb}, valorado con {s_zone} puntos en tu configuración de zonas.",
     }
 
     # 3. Micro-localización por Calle y Tranvía (1-10)
@@ -763,20 +779,23 @@ def score_listing(listing: Dict[str, Any], profile: Optional[Dict[str, Any]] = N
 
     base_score_100 = (weighted_sum / total_weight) * 10.0 if total_weight > 0 else 50.0
 
-    # Bonificaciones y Penalizaciones fijas (incluyendo penalización negativa por Agencia)
-    bonus_garage = float(bonuses_cfg.get("garage_points", 20.0)) if has_garage else 0.0
-    bonus_storage = float(bonuses_cfg.get("storage_room_points", 8.0)) if has_storage else 0.0
-    bonus_penthouse = float(bonuses_cfg.get("penthouse_solarium_points", 10.0)) if is_penthouse else 0.0
+    # Bonificaciones y Penalizaciones fijas (proporcionadas a la escala 0-100)
+    bonus_garage = float(bonuses_cfg.get("garage_points", 6.0)) if has_garage else 0.0
+    bonus_storage = float(bonuses_cfg.get("storage_room_points", 3.0)) if has_storage else 0.0
+    bonus_penthouse = float(bonuses_cfg.get("penthouse_solarium_points", 5.0)) if is_penthouse else 0.0
 
     if is_agency:
         if fin_est["buyer_fee_exempt"]:
-            agency_modifier = float(bonuses_cfg.get("agency_no_fee_penalty_points", -5.0))
+            agency_modifier = float(bonuses_cfg.get("agency_no_fee_penalty_points", -3.0))
         else:
-            agency_modifier = float(bonuses_cfg.get("agency_penalty_points", -15.0))
+            agency_modifier = float(bonuses_cfg.get("agency_penalty_points", -10.0))
     else:
         agency_modifier = 0.0
 
-    total_bonuses = bonus_garage + bonus_storage + bonus_penthouse + agency_modifier
+    # Impacto directo del nivel de zona (10, 7.8, 5.5, 3.5) para que una zona de 3.5 pts no supere a una de 10 pts por tener garaje
+    zone_direct_impact = round((s_zone - 6.0) * 1.8, 1)
+
+    total_bonuses = round(bonus_garage + bonus_storage + bonus_penthouse + agency_modifier + zone_direct_impact, 1)
 
     structural_penalty = 0.0
     if not has_elevator:

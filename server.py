@@ -31,6 +31,46 @@ from scoring_engine import (  # noqa: E402
     score_listing,
 )
 
+BARRIO_CENTERS = {
+    "Actur": (41.6695, -0.8895),
+    "Arrabal": (41.6605, -0.8735),
+    "El Rabal": (41.6620, -0.8710),
+    "Barrio Jesús": (41.6585, -0.8665),
+    "Universidad": (41.6405, -0.8975),
+    "Romareda": (41.6365, -0.9035),
+    "Centro": (41.6488, -0.8850),
+    "Casco Histórico": (41.6552, -0.8795),
+    "San Pablo": (41.6555, -0.8860),
+    "La Magdalena": (41.6525, -0.8725),
+    "Delicias": (41.6495, -0.9085),
+    "Ave": (41.6565, -0.9110),
+    "La Almozara": (41.6585, -0.9045),
+    "San José": (41.6385, -0.8735),
+    "Miraflores": (41.6395, -0.8780),
+    "Las Fuentes": (41.6445, -0.8645),
+    "Torrero": (41.6295, -0.8825),
+    "La Paz": (41.6255, -0.8780),
+    "Parque Venecia": (41.6225, -0.8865),
+    "Pinares de Venecia": (41.6235, -0.8855),
+    "Venecia": (41.6230, -0.8860),
+    "Valdefierro": (41.6410, -0.9285),
+    "Oliver": (41.6515, -0.9245),
+    "Miralbueno": (41.6535, -0.9335),
+    "Rosales del Canal": (41.6290, -0.9320),
+    "Valdespartera": (41.6220, -0.9160),
+    "Arcosur": (41.6180, -0.9380),
+    "Montecanal": (41.6285, -0.9230),
+    "Parque Goya": (41.6880, -0.8730),
+    "Santa Isabel": (41.6655, -0.8385),
+    "Casetas": (41.7190, -1.0225),
+    "Garrapinillos": (41.6850, -1.0120),
+    "Movera": (41.6510, -0.8150),
+    "Juslibol": (41.6885, -0.9065),
+    "Montañana": (41.7080, -0.8350),
+    "Peñaflor": (41.7550, -0.7950),
+    "San Juan de Mozarrifar": (41.7120, -0.8610),
+}
+
 
 def get_db_connection() -> sqlite3.Connection:
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -83,31 +123,47 @@ def format_row_for_frontend(r: sqlite3.Row) -> dict:
         badges.append("Particular (Trato directo · 0 € comisión)")
     else:
         if buyer_fee_exempt:
-            badges.append(f"Agencia: {seller_name} (Sin comisión comprador · -5 pts)")
+            badges.append(f"Agencia: {seller_name} (Sin comisión comprador · {bonuses.get('agency_no_fee_penalty_points', -3)} pts)")
         else:
-            badges.append(f"Agencia: {seller_name} ({bonuses.get('agency_penalty_points', -15)} pts)")
+            badges.append(f"Agencia: {seller_name} ({bonuses.get('agency_penalty_points', -10)} pts)")
 
     if price <= 135000:
         badges.append("Estrategia A (<135k € para reformar)")
     if d.get("has_garage"):
-        badges.append(f"Garaje (+{int(bonuses.get('garage_points', 20))} pts)")
+        badges.append(f"Garaje (+{int(bonuses.get('garage_points', 6))} pts)")
     if d.get("has_storage"):
-        badges.append(f"Trastero (+{int(bonuses.get('storage_room_points', 8))} pts)")
+        badges.append(f"Trastero (+{int(bonuses.get('storage_room_points', 3))} pts)")
     if d.get("is_penthouse"):
-        badges.append(f"Ático (+{int(bonuses.get('penthouse_solarium_points', 10))} pts)")
+        badges.append(f"Ático (+{int(bonuses.get('penthouse_solarium_points', 5))} pts)")
     if d.get("has_terrace"):
         badges.append("Con terraza")
     if fin.get("fits_monthly_limit_700"):
         badges.append(f"Cuota {fin.get('monthly_mortgage_eur', 0):.0f} €/mes (≤700 €)")
+
+    matched_nb = zone_info.get("matched_neighborhood") or d.get("neighborhood") or "Zaragoza"
+    if matched_nb in ("Zaragoza (General)", "Zaragoza Capital") and d.get("neighborhood") and d.get("neighborhood") not in ("Zaragoza (General)", "Zaragoza Capital"):
+        matched_nb = d.get("neighborhood")
+    zone_pts = float(zone_info.get("zone_score_10") or sc.get("scores_1_to_10", {}).get("neighborhood_tier") or 5.5)
+
+    exact_lat = d.get("lat")
+    exact_lon = d.get("lon")
+    has_exact_gps = exact_lat is not None and exact_lon is not None
+    if has_exact_gps:
+        map_lat, map_lon = float(exact_lat), float(exact_lon)
+    else:
+        base_lat, base_lon = BARRIO_CENTERS.get(matched_nb, (41.6488, -0.8891))
+        seed = sum(ord(c) for c in str(d["id"]))
+        map_lat = base_lat + ((seed % 19) - 9) * 0.00045
+        map_lon = base_lon + (((seed // 7) % 19) - 9) * 0.00055
 
     return {
         "id": d["id"],
         "portal": d.get("portal") or "Portal",
         "url": d.get("url") or "",
         "title": d.get("title") or "Vivienda en Zaragoza",
-        "neighborhood": zone_info.get("matched_neighborhood") or d.get("neighborhood") or "Zaragoza",
+        "neighborhood": matched_nb,
         "raw_neighborhood": d.get("neighborhood") or "",
-        "street": d.get("address") or d.get("neighborhood") or "Zaragoza",
+        "street": d.get("address") or matched_nb or "Zaragoza",
         "price": int(round(price)),
         "previous_price": int(round(d["previous_price_eur"])) if d.get("previous_price_eur") else None,
         "sqm": int(round(sqm)),
@@ -129,9 +185,14 @@ def format_row_for_frontend(r: sqlite3.Row) -> dict:
         "description": d.get("description") or "",
         "image_url": d.get("image_url") or "",
         "photos": gallery,
-        "lat": d.get("lat"),
-        "lon": d.get("lon"),
+        "lat": exact_lat,
+        "lon": exact_lon,
+        "map_lat": map_lat,
+        "map_lon": map_lon,
+        "has_exact_gps": has_exact_gps,
         "zone_tier": d.get("zone_tier") or zone_info.get("tier") or "x2",
+        "zone_points": zone_pts,
+        "also_in_portals": [],
         "total_points": float(d.get("final_ranking_score") or 0.0),
         "score_100": float(d.get("base_score_100") or 0.0),
         "hard_discard": bool(d.get("hard_discard", 0)),
@@ -170,6 +231,49 @@ def format_row_for_frontend(r: sqlite3.Row) -> dict:
     }
 
 
+def deduplicate_properties(props: list[dict]) -> list[dict]:
+    """
+    Fusiona anuncios duplicados del mismo inmueble publicados en distintos portales
+    (p. ej. el mismo piso en Fotocasa y Pisos.com con idéntico precio, m², habitaciones y zona/agencia).
+    Conserva como ficha principal la que tenga más fotos, coordenadas GPS y mejor puntuación.
+    """
+    unique: list[dict] = []
+    for p in props:
+        matched_existing = None
+        for ex in unique:
+            same_price = ex["price"] == p["price"]
+            close_sqm = abs(ex["sqm"] - p["sqm"]) <= 2
+            same_beds = ex["bedrooms"] == p["bedrooms"]
+            same_nb = ex["neighborhood"].strip().lower() == p["neighborhood"].strip().lower()
+            same_seller = (
+                ex["seller_name"]
+                and p["seller_name"]
+                and ex["seller_name"].strip().lower()[:10] == p["seller_name"].strip().lower()[:10]
+            )
+            if same_price and close_sqm and same_beds and (same_nb or same_seller):
+                matched_existing = ex
+                break
+
+        if matched_existing is None:
+            unique.append(p)
+        else:
+            # Si el candidato nuevo tiene coordenadas GPS y el existente no, o más fotos, enriquecemos el existente
+            if not matched_existing.get("lat") and p.get("lat"):
+                matched_existing["lat"] = p["lat"]
+                matched_existing["lon"] = p["lon"]
+            if len(p.get("description") or "") > len(matched_existing.get("description") or ""):
+                matched_existing["description"] = p["description"]
+            existing_photos = set(matched_existing.get("photos") or [])
+            for ph in p.get("photos") or []:
+                if ph and ph not in existing_photos:
+                    matched_existing["photos"].append(ph)
+                    existing_photos.add(ph)
+            matched_existing.setdefault("also_in_portals", []).append(
+                {"id": p["id"], "portal": p["portal"], "url": p["url"]}
+            )
+    return unique
+
+
 def fetch_all_properties_and_profile() -> dict:
     profile = load_buyer_profile()
     conn = get_db_connection()
@@ -179,7 +283,8 @@ def fetch_all_properties_and_profile() -> dict:
     scan_row = conn.execute("SELECT * FROM scan_runs ORDER BY id DESC LIMIT 1").fetchone()
     conn.close()
 
-    props = [format_row_for_frontend(r) for r in rows]
+    raw_props = [format_row_for_frontend(r) for r in rows]
+    props = deduplicate_properties(raw_props)
     guide_md = GUIDE_PATH.read_text(encoding="utf-8") if GUIDE_PATH.exists() else ""
 
     return {
@@ -243,6 +348,21 @@ class ZgzHouseFinderHandler(BaseHTTPRequestHandler):
             self.send_header("Content-Length", str(len(content)))
             self.end_headers()
             self.wfile.write(content)
+            return
+
+        if parsed.path in ("/favicon.svg", "/favicon.ico"):
+            svg_logo = (
+                '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">'
+                '<rect width="64" height="64" rx="14" fill="#2B5B84"/>'
+                '<path d="M18 18h28v7.5L27.8 46H46v8H18v-7.5L36.2 26H18V18z" fill="#FFFFFF"/>'
+                '</svg>'
+            ).encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", "image/svg+xml; charset=utf-8")
+            self.send_header("Cache-Control", "public, max-age=86400")
+            self.send_header("Content-Length", str(len(svg_logo)))
+            self.end_headers()
+            self.wfile.write(svg_logo)
             return
 
         if parsed.path == "/api/state":

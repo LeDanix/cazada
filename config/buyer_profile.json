@@ -41,9 +41,9 @@
   },
   "zone_multipliers": {
     "x4": {
-      "multiplier": 4.0,
+      "multiplier": 10.0,
       "base_score_10": 10.0,
-      "label": "Zonas Muy Buenas (x4)",
+      "label": "Zona de 10 puntos",
       "neighborhoods": [
         "Actur",
         "Universidad",
@@ -55,9 +55,9 @@
       ]
     },
     "x3": {
-      "multiplier": 3.0,
+      "multiplier": 7.8,
       "base_score_10": 7.8,
-      "label": "Zonas Media-Buena (x3)",
+      "label": "Zona de 7.8 puntos",
       "neighborhoods": [
         "La Almozara",
         "Almozara",
@@ -72,9 +72,9 @@
       ]
     },
     "x2": {
-      "multiplier": 2.0,
+      "multiplier": 5.5,
       "base_score_10": 5.5,
-      "label": "Zonas Medias (x2)",
+      "label": "Zona de 5.5 puntos",
       "neighborhoods": [
         "Pinares de Venecia",
         "Parque Venecia",
@@ -92,9 +92,9 @@
       ]
     },
     "x1": {
-      "multiplier": 1.0,
+      "multiplier": 3.5,
       "base_score_10": 3.5,
-      "label": "Zonas Bajas (x1)",
+      "label": "Zona de 3.5 puntos",
       "neighborhoods": [
         "La Paz",
         "Delicias",
@@ -115,9 +115,9 @@
       "description": "Descuento €/m² respecto a su barrio y ahorro del Coste Total (Compra + Reforma) frente a pisos ya reformados. Premia pisos <135.000€ con alto margen de mejora."
     },
     "neighborhood_tier": {
-      "name": "Localización por Barrio (Grupos x4/x3/x2/x1)",
-      "weight": 4.0,
-      "description": "Puntuación según la clasificación de barrios definida en tu perfil."
+      "name": "Valoración de Zona por Barrio (10 / 7.8 / 5.5 / 3.5 pts)",
+      "weight": 6.0,
+      "description": "Puntuación asignada directamente al barrio en tu configuración de zonas (10, 7.8, 5.5 o 3.5 puntos)."
     },
     "street_microlocation": {
       "name": "Micro-localización por Calle",
@@ -176,10 +176,10 @@
     }
   },
   "fixed_bonuses": {
-    "garage_points": 20.0,
-    "storage_room_points": 8.0,
-    "penthouse_solarium_points": 10.0,
-    "agency_penalty_points": -15.0,
-    "agency_no_fee_penalty_points": -5.0
+    "garage_points": 6.0,
+    "storage_room_points": 3.0,
+    "penthouse_solarium_points": 5.0,
+    "agency_penalty_points": -10.0,
+    "agency_no_fee_penalty_points": -3.0
   }
 }

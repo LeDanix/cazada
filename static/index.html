@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Zaragoza Vivienda — Análisis y Valoración Inmobiliaria</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="shortcut icon" href="/favicon.ico" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
@@ -845,18 +847,54 @@
       border: 1px solid var(--border);
     }
 
-    /* MAPA */
-    #map-container {
-      height: 540px;
-      width: 100%;
-      border-radius: var(--radius);
-      border: 1px solid var(--border);
-      margin-bottom: 22px;
-      display: none;
-      box-shadow: var(--shadow);
+    /* MAPA CON ESTADO ACTIVO Y BARRA DE CONTROL */
+    .btn-map-active {
+      background: var(--primary) !important;
+      color: #FFFFFF !important;
+      border-color: var(--primary-hover) !important;
+      box-shadow: 0 0 0 3px rgba(43, 91, 132, 0.25);
     }
-    #map-container.visible {
+
+    #map-panel {
+      display: none;
+      background: var(--bg-card);
+      border: 2px solid var(--primary);
+      border-radius: var(--radius);
+      margin-bottom: 22px;
+      box-shadow: var(--shadow-md);
+      overflow: hidden;
+    }
+    #map-panel.visible {
       display: block;
+    }
+
+    .map-panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding: 12px 18px;
+      background: var(--primary-soft);
+      border-bottom: 1px solid var(--primary-border);
+    }
+
+    .map-panel-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding: 10px 18px;
+      background: var(--bg-subtle);
+      border-top: 1px solid var(--border);
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    #map-container {
+      height: 500px;
+      width: 100%;
     }
 
     /* CONFIGURACIÓN DE PESOS Y SELECTOR DE ZONAS */
@@ -957,12 +995,27 @@
       padding: 28px 32px;
       box-shadow: var(--shadow);
     }
+    .guide-box h1 {
+      color: var(--primary);
+      font-size: 1.35rem;
+      margin-bottom: 10px;
+    }
     .guide-box h2 {
       color: var(--primary);
-      margin: 22px 0 10px;
-      font-size: 1.15rem;
+      margin: 24px 0 12px;
+      font-size: 1.12rem;
       border-bottom: 1px solid var(--border);
       padding-bottom: 6px;
+    }
+    .guide-box h3 {
+      color: var(--text);
+      margin: 16px 0 8px;
+      font-size: 0.98rem;
+    }
+    .guide-box p {
+      margin-bottom: 12px;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
     }
     .guide-box ul, .guide-box ol {
       margin-left: 22px;
@@ -970,7 +1023,17 @@
     }
     .guide-box li {
       margin-bottom: 6px;
-      font-size: 0.9rem;
+      font-size: 0.89rem;
+      color: var(--text-secondary);
+    }
+    .guide-box blockquote {
+      background: var(--primary-soft);
+      border-left: 4px solid var(--primary);
+      padding: 12px 16px;
+      border-radius: 0 6px 6px 0;
+      margin: 16px 0;
+      color: var(--text);
+      font-size: 0.88rem;
     }
 
     /* MODAL AÑADIR PISO */
@@ -1029,7 +1092,7 @@
   <header>
     <div class="header-inner">
       <div class="brand" onclick="closePropertyDetail()">
-        <div class="brand-mark">ZGZ</div>
+        <div class="brand-mark" style="font-size:1.15rem; font-weight:800;">Z</div>
         <div>
           <h1>Zaragoza Vivienda — Análisis y Selección</h1>
           <p>Valoración técnica y financiera auditable sobre Fotocasa, Pisos.com, Tecnocasa y Redpiso</p>
@@ -1041,7 +1104,7 @@
           <span class="pulse-dot"></span>
           <span id="last-scan-label">Cargando datos...</span>
         </div>
-        <button class="btn-secondary" onclick="toggleMap()">Mapa de Zaragoza</button>
+        <button class="btn-secondary" id="btn-map-toggle" onclick="toggleMap()">Mapa de Zaragoza</button>
         <button class="btn-secondary" onclick="openAddModal()">Añadir inmueble</button>
         <button class="btn-primary" id="btn-scan" onclick="triggerDailyScan()">Actualizar portales</button>
       </div>
@@ -1055,28 +1118,48 @@
 
       <div class="nav-tabs">
         <button class="tab-btn active" onclick="switchTab('ranking', this)">Catálogo de Viviendas</button>
-        <button class="tab-btn" onclick="switchTab('weights', this)">Pesos y Selector de Zonas</button>
+        <button class="tab-btn" onclick="switchTab('weights', this)">Pesos y Puntos por Zona</button>
         <button class="tab-btn" onclick="switchTab('neighborhoods', this)">Tabla de Barrios Zaragoza</button>
         <button class="tab-btn" onclick="switchTab('guide', this)">Guía Financiera e ITP Aragón</button>
       </div>
 
-      <div id="map-container"></div>
+      <!-- PANEL DEL MAPA CON INSTRUCCIONES CLARAS Y BOTÓN DE SALIDA -->
+      <div id="map-panel">
+        <div class="map-panel-header">
+          <div>
+            <strong style="color:var(--primary); font-size:0.92rem;">Vista Cartográfica de Zaragoza (OpenStreetMap Libre · Sin API Key)</strong>
+            <div style="font-size:0.78rem; color:var(--text-secondary); margin-top:2px;">
+              Haz clic en cualquier círculo del mapa para ver el resumen del piso. Para salir del mapa, pulsa <strong>«Cerrar mapa»</strong>, vuelve a pulsar el botón superior marcado o presiona la tecla <strong>Esc</strong>.
+            </div>
+          </div>
+          <button class="btn-primary" onclick="toggleMap(false)">Cerrar mapa y volver al listado (Esc)</button>
+        </div>
+        <div id="map-container"></div>
+        <div class="map-panel-footer">
+          <div style="display:flex; gap:16px; flex-wrap:wrap;">
+            <span><strong style="color:#1E6F5C;">● Verde:</strong> Particular (0 € comisión)</span>
+            <span><strong style="color:#2B5B84;">● Azul Pantone:</strong> Puntuación alta (≥ 75 pts)</span>
+            <span><strong style="color:#9A6700;">● Ámbar:</strong> Puntuación media</span>
+          </div>
+          <button class="btn-secondary" style="padding:4px 10px; font-size:0.75rem;" onclick="toggleMap(false)">Ocultar mapa</button>
+        </div>
+      </div>
 
       <!-- TAB 1: RANKING DE TARJETAS LIMPIAS -->
       <div id="tab-ranking" class="tab-content active">
         <div class="filters-bar">
           <div class="filter-group" style="flex: 1.6;">
             <label>Buscar por calle, barrio o referencia</label>
-            <input type="text" id="f-search" placeholder="Ej. Actur, Universidad, Venecia, terraza..." oninput="renderProperties()" />
+            <input type="text" id="f-search" placeholder="Ej. Actur, Universidad, Venecia, La Paz, terraza..." oninput="renderProperties()" />
           </div>
           <div class="filter-group">
-            <label>Grupo de Zona</label>
+            <label>Puntos de Zona</label>
             <select id="f-zone" onchange="renderProperties()">
               <option value="all">Todas las zonas</option>
-              <option value="x4">Grupo x4 (Muy Buena)</option>
-              <option value="x3">Grupo x3 (Media-Buena)</option>
-              <option value="x2">Grupo x2 (Media)</option>
-              <option value="x1">Grupo x1 (Económica)</option>
+              <option value="x4">Zona de 10 puntos (Preferente)</option>
+              <option value="x3">Zona de 7.8 puntos (Media-Alta)</option>
+              <option value="x2">Zona de 5.5 puntos (Media)</option>
+              <option value="x1">Zona de 3.5 puntos (Económica)</option>
             </select>
           </div>
           <div class="filter-group">
@@ -1122,24 +1205,24 @@
         <div id="properties-list" class="property-grid"></div>
       </div>
 
-      <!-- TAB 2: CONFIGURACIÓN DE PESOS Y SELECTOR DE ZONAS -->
+      <!-- TAB 2: CONFIGURACIÓN DE PESOS Y PUNTOS DE ZONA -->
       <div id="tab-weights" class="tab-content">
         <div class="weights-panel">
           <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; border-bottom:1px solid var(--border); padding-bottom:16px;">
             <div>
-              <h2 style="font-size:1.15rem; color:var(--text);">Configuración de Ponderaciones y Selector de Zonas</h2>
+              <h2 style="font-size:1.15rem; color:var(--text);">Configuración de Ponderaciones y Puntos por Barrio</h2>
               <p style="color:var(--text-muted); font-size:0.84rem;">
-                Ajusta los pesos (1 a 10), las bonificaciones/penalizaciones y el grupo multiplicador (x4, x3, x2, x1) de cada barrio. El recálculo es instantáneo sobre SQLite sin llamadas de red.
+                Ajusta los puntos de zona de cada barrio (10, 7.8, 5.5 o 3.5 puntos), los pesos de los 13 factores y las bonificaciones. El recálculo es instantáneo sobre SQLite sin llamadas de red.
               </p>
             </div>
             <button class="btn-primary" onclick="saveWeights()">Guardar cambios y recalcular</button>
           </div>
 
           <h3 style="margin-top:20px; font-size:0.86rem; color:var(--primary); text-transform:uppercase; letter-spacing:0.04em;">
-            1. Selector de Grupo por Barrio (x4 / x3 / x2 / x1)
+            1. Puntuación Base por Barrio (10 / 7.8 / 5.5 / 3.5 puntos)
           </h3>
           <p style="font-size:0.8rem; color:var(--text-muted); margin-top:4px;">
-            Cambia cualquier barrio de grupo (por ejemplo, La Paz en x1 y Venecia en x2) y pulsa «Guardar cambios y recalcular».
+            Asigna a cada barrio de Zaragoza uno de los 4 niveles de puntos (10, 7.8, 5.5 o 3.5) y pulsa «Guardar cambios y recalcular».
           </p>
           <div class="zone-selector-grid" id="zone-selectors-container"></div>
 
@@ -1436,7 +1519,7 @@
       const filtered = getFilteredProperties();
       CURRENT_FILTERED_IDS = filtered.map(p => p.id);
 
-      if (MAP_INSTANCE && document.getElementById('map-container').classList.contains('visible')) {
+      if (MAP_INSTANCE && document.getElementById('map-panel').classList.contains('visible')) {
         updateMapMarkers(filtered);
       }
 
@@ -1449,7 +1532,7 @@
       container.innerHTML = filtered.map((p, idx) => {
         const ev = p.evaluation;
         const fin = ev.financials;
-        const scoreClass = p.total_points >= 78 ? 'score-high' : (p.total_points >= 62 ? 'score-mid' : 'score-low');
+        const scoreClass = p.total_points >= 75 ? 'score-high' : (p.total_points >= 60 ? 'score-mid' : 'score-low');
         const photos = (p.photos && p.photos.length) ? p.photos : (p.image_url ? [p.image_url] : []);
         const curPhotoIdx = PHOTO_INDEX_MAP[p.id] || 0;
         const currentPhotoUrl = photos.length ? proxiedImg(photos[curPhotoIdx]) : '';
@@ -1464,6 +1547,10 @@
         }
 
         const floorLabel = (p.floor !== null && p.floor !== undefined) ? `${p.floor}ª planta` : 'Planta N/D';
+        const zonePtsLabel = p.zone_points !== undefined ? `${p.zone_points} pts` : '';
+        const portalTagText = (p.also_in_portals && p.also_in_portals.length)
+          ? `${p.portal} (+${p.also_in_portals.map(a => a.portal).join(', ')})`
+          : p.portal;
 
         return `
           <article class="clean-card ${p.hard_discard ? 'discarded' : ''}">
@@ -1473,14 +1560,14 @@
               <div class="card-top-overlay">
                 <div class="rank-chip">
                   <span>#${idx + 1}</span>
-                  <span class="zone-pill-mini z-${p.zone_tier}">Zona ${p.zone_tier.toUpperCase()}</span>
+                  <span class="zone-pill-mini z-${p.zone_tier}">${p.neighborhood} · ${zonePtsLabel}</span>
                 </div>
                 <div class="score-floating ${scoreClass}">
                   ${p.total_points.toFixed(1)}<small>pts</small>
                 </div>
               </div>
 
-              <span class="portal-mini-tag">${p.portal}</span>
+              <span class="portal-mini-tag">${portalTagText}</span>
 
               ${photos.length > 1 ? `
                 <div class="photo-mini-nav" onclick="event.stopPropagation()">
@@ -1504,7 +1591,7 @@
                 ${p.title}
               </div>
               <div class="clean-location">
-                ${p.neighborhood} · ${p.street}
+                <strong>${p.neighborhood}</strong> (${zonePtsLabel}) · ${p.street}
               </div>
 
               <div class="clean-specs">
@@ -1578,7 +1665,7 @@
       const photos = (p.photos && p.photos.length) ? p.photos : (p.image_url ? [p.image_url] : []);
       const curPhotoIdx = PHOTO_INDEX_MAP[p.id] || 0;
       const currentPhotoUrl = photos.length ? proxiedImg(photos[curPhotoIdx]) : '';
-      const scoreClass = p.total_points >= 78 ? 'score-high' : (p.total_points >= 62 ? 'score-mid' : 'score-low');
+      const scoreClass = p.total_points >= 75 ? 'score-high' : (p.total_points >= 60 ? 'score-mid' : 'score-low');
 
       const factorBars = Object.entries(ev.scores_1_to_10).map(([key, val]) => {
         const meta = factorMeta[key] || { name: key, weight: 1 };
@@ -1586,7 +1673,7 @@
         return `
           <div class="score-item">
             <div class="score-item-header">
-              <span class="score-item-name">${meta.name} <small style="color:var(--text-muted);">(x${meta.weight})</small></span>
+              <span class="score-item-name">${meta.name} <small style="color:var(--text-muted);">(Peso ${meta.weight})</small></span>
               <span class="score-item-val">${val.toFixed(1)}/10</span>
             </div>
             <div class="progress-bg">
@@ -1605,7 +1692,7 @@
           : `<span class="status-verificado">Verificado</span>`;
         return `
           <tr>
-            <td><strong>${meta.name}</strong><br/><span style="color:var(--text-muted);font-size:0.72rem;">Peso: x${meta.weight}</span></td>
+            <td><strong>${meta.name}</strong><br/><span style="color:var(--text-muted);font-size:0.72rem;">Peso: ${meta.weight}</span></td>
             <td style="font-weight:700; font-size:0.9rem; color:var(--primary);">${val.toFixed(1)} / 10</td>
             <td>${statusBadge}</td>
             <td>${au.source || '-'}</td>
@@ -1622,6 +1709,10 @@
         ? `${ev.nearest_tram_m} m (${ev.nearest_tram_name})`
         : 'Sin coordenadas GPS exactas en portal';
 
+      const dupLinksHtml = (p.also_in_portals && p.also_in_portals.length)
+        ? p.also_in_portals.map(dup => `<a href="${dup.url}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">Ver también en ${dup.portal}</a>`).join('')
+        : '';
+
       document.getElementById('property-detail-content').innerHTML = `
         <div class="detail-hero">
           <div class="detail-hero-grid">
@@ -1632,7 +1723,7 @@
                 <div class="card-top-overlay">
                   <div class="rank-chip">
                     <span>${p.portal} · ID ${p.id}</span>
-                    <span class="zone-pill-mini z-${p.zone_tier}">Zona ${p.zone_tier.toUpperCase()}</span>
+                    <span class="zone-pill-mini z-${p.zone_tier}">${p.neighborhood} · ${p.zone_points} pts</span>
                   </div>
                   <div class="score-floating ${scoreClass}">
                     ${p.total_points.toFixed(1)}<small>pts</small>
@@ -1660,7 +1751,7 @@
               <div>
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap;">
                   <div>
-                    <span class="zone-pill-mini z-${p.zone_tier}">Barrio ${p.neighborhood} · Grupo ${p.zone_tier.toUpperCase()}</span>
+                    <span class="zone-pill-mini z-${p.zone_tier}">Barrio ${p.neighborhood} · Zona de ${p.zone_points} puntos</span>
                     <h2 style="font-size:1.3rem; font-weight:700; margin-top:8px; line-height:1.3; color:var(--text);">${p.title}</h2>
                     <p style="color:var(--text-muted); font-size:0.86rem; margin-top:4px;">${p.street} · Anunciante: <strong style="color:var(--text);">${p.seller_name}</strong></p>
                   </div>
@@ -1677,7 +1768,7 @@
                     <div style="font-size:1.35rem; font-weight:700; color:${fin.fits_700_rule ? 'var(--success)' : 'var(--warning)'};">
                       ${fmtEur(fin.monthly_quota_90_eur)}/mes
                     </div>
-                    <div style="font-size:0.75rem; color:var(--text-secondary);">Base 1-10: ${p.score_100.toFixed(1)} · Bonos/Agencia: ${ev.bonus_points >= 0 ? '+' : ''}${ev.bonus_points}</div>
+                    <div style="font-size:0.75rem; color:var(--text-secondary);">Base 1-10: ${p.score_100.toFixed(1)} · Bonos/Zona/Agencia: ${ev.bonus_points >= 0 ? '+' : ''}${ev.bonus_points}</div>
                   </div>
                 </div>
 
@@ -1722,9 +1813,12 @@
                   <option value="visitado" ${p.user_status === 'visitado' ? 'selected' : ''}>Visitado</option>
                   <option value="descartado" ${p.user_status === 'descartado' ? 'selected' : ''}>Descartado</option>
                 </select>
-                <a href="${p.url}" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
-                  Abrir anuncio original en ${p.portal}
-                </a>
+                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                  ${dupLinksHtml}
+                  <a href="${p.url}" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
+                    Abrir anuncio original en ${p.portal}
+                  </a>
+                </div>
               </div>
             </div>
           </div>
@@ -1769,7 +1863,7 @@
               </div>
               <div class="vertical-spec-row">
                 <span class="vertical-spec-label">Garaje y Trastero</span>
-                <span class="vertical-spec-value">Garaje: ${p.has_garage ? 'Sí (+20 pts)' : 'No'} · Trastero: ${p.has_storage ? 'Sí (+8 pts)' : 'No'}</span>
+                <span class="vertical-spec-value">Garaje: ${p.has_garage ? `Sí (+${ev.bonuses.garage_points} pts)` : 'No'} · Trastero: ${p.has_storage ? `Sí (+${ev.bonuses.storage_room_points} pts)` : 'No'}</span>
               </div>
               <div class="vertical-spec-row">
                 <span class="vertical-spec-label">Orientación declarada</span>
@@ -1792,8 +1886,8 @@
                 <span class="vertical-spec-value">${p.is_agency ? `Agencia (${p.seller_name})` : `Particular (${p.seller_name})`}</span>
               </div>
               <div class="vertical-spec-row">
-                <span class="vertical-spec-label">Barrio y grupo multiplicador</span>
-                <span class="vertical-spec-value">${p.neighborhood} (Grupo ${p.zone_tier.toUpperCase()})</span>
+                <span class="vertical-spec-label">Barrio y puntos de zona</span>
+                <span class="vertical-spec-value">${p.neighborhood} (${p.zone_points} / 10 puntos)</span>
               </div>
               <div class="vertical-spec-row">
                 <span class="vertical-spec-label">Distancia GPS a parque más cercano</span>
@@ -1805,7 +1899,7 @@
               </div>
               <div class="vertical-spec-row">
                 <span class="vertical-spec-label">Portal inmobiliario y referencia</span>
-                <span class="vertical-spec-value">${p.portal} (${p.id})</span>
+                <span class="vertical-spec-value">${p.portal} (${p.id})${p.also_in_portals && p.also_in_portals.length ? ` · Fusionado con ${p.also_in_portals.map(a => a.portal).join(', ')}` : ''}</span>
               </div>
             </div>
           </div>
@@ -1871,12 +1965,11 @@
       const bonuses = APP_STATE.profile.fixed_bonuses;
       const zm = APP_STATE.profile.zone_multipliers || {};
 
-      // 1. Renderizar Selector de Zonas por Barrio
+      // 1. Renderizar Selector de Puntos por Barrio (10, 7.8, 5.5, 3.5)
       const allNeighborhoods = [];
       ['x4', 'x3', 'x2', 'x1'].forEach(tierKey => {
         const list = (zm[tierKey] && zm[tierKey].neighborhoods) || [];
         list.forEach(nb => {
-          // Evitar duplicar alias internos de Venecia en la vista de selectores
           if (nb === 'Venecia') return;
           allNeighborhoods.push({ name: nb, tier: tierKey });
         });
@@ -1888,10 +1981,10 @@
         <div class="zone-selector-item">
           <span class="zone-selector-name">${item.name}</span>
           <select data-zone-nb="${item.name}">
-            <option value="x4" ${item.tier === 'x4' ? 'selected' : ''}>Grupo x4 (10.0 pts)</option>
-            <option value="x3" ${item.tier === 'x3' ? 'selected' : ''}>Grupo x3 (7.8 pts)</option>
-            <option value="x2" ${item.tier === 'x2' ? 'selected' : ''}>Grupo x2 (5.5 pts)</option>
-            <option value="x1" ${item.tier === 'x1' ? 'selected' : ''}>Grupo x1 (3.5 pts)</option>
+            <option value="x4" ${item.tier === 'x4' ? 'selected' : ''}>10 puntos (Preferente)</option>
+            <option value="x3" ${item.tier === 'x3' ? 'selected' : ''}>7.8 puntos (Media-Alta)</option>
+            <option value="x2" ${item.tier === 'x2' ? 'selected' : ''}>5.5 puntos (Media)</option>
+            <option value="x1" ${item.tier === 'x1' ? 'selected' : ''}>3.5 puntos (Económica)</option>
           </select>
         </div>
       `).join('');
@@ -1901,12 +1994,12 @@
         <div class="weight-control">
           <div class="weight-control-top">
             <label>${meta.name}</label>
-            <span class="weight-val-badge" id="w-badge-${key}">x${meta.weight}</span>
+            <span class="weight-val-badge" id="w-badge-${key}">Peso ${meta.weight}</span>
           </div>
           <div class="weight-desc">${meta.description}</div>
           <input type="range" min="0" max="10" step="0.5" value="${meta.weight}"
             data-weight-key="${key}"
-            oninput="document.getElementById('w-badge-${key}').textContent = 'x' + this.value" />
+            oninput="document.getElementById('w-badge-${key}').textContent = 'Peso ' + this.value" />
         </div>
       `).join('');
 
@@ -1921,8 +2014,8 @@
 
       document.getElementById('bonuses-sliders-container').innerHTML = Object.entries(bonuses).map(([bk, bval]) => {
         const isNeg = bk.includes('agency');
-        const minVal = isNeg ? -40 : 0;
-        const maxVal = isNeg ? 0 : 35;
+        const minVal = isNeg ? -30 : 0;
+        const maxVal = isNeg ? 0 : 25;
         return `
           <div class="weight-control">
             <div class="weight-control-top">
@@ -1985,7 +2078,7 @@
           <div class="detail-panel">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border);">
               <span class="zone-pill-mini z-${g}" style="font-size:0.78rem; padding:4px 10px;">${gdata.label}</span>
-              <span style="font-weight:700;font-size:0.84rem;color:var(--primary);">Nota Base: ${gdata.base_score_10}/10</span>
+              <span style="font-weight:700;font-size:0.84rem;color:var(--primary);">${gdata.base_score_10} / 10 pts</span>
             </div>
             <div>${rows}</div>
           </div>
@@ -1993,16 +2086,113 @@
       }).join('');
     }
 
+    function formatInlineMd(text) {
+      return text
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/`([^`]+)`/g, '<code style="background:var(--primary-soft);color:var(--primary);padding:2px 6px;border-radius:4px;font-size:0.84em;">$1</code>');
+    }
+
     function renderGuide() {
       const md = APP_STATE.guide_markdown || '';
-      let html = md
-        .replace(/^### (.*$)/gim, '<h3 style="margin-top:16px;color:var(--text);">$1</h3>')
-        .replace(/^## (.*$)/gim, '<h2>$1</h2>')
-        .replace(/^# (.*$)/gim, '<h1 style="margin-bottom:12px;color:var(--primary);">$1</h1>')
-        .replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
-        .replace(/^\* (.*$)/gim, '<li>$1</li>')
-        .replace(/^[0-9]+\. (.*$)/gim, '<li>$1</li>')
-        .replace(/\n\n/gim, '<br/><br/>');
+      const lines = md.split(/\r?\n/);
+      let html = '';
+      let inTable = false;
+      let tableHeaderDone = false;
+      let inUl = false;
+      let inOl = false;
+
+      const closeListsAndTable = () => {
+        if (inUl) { html += '</ul>'; inUl = false; }
+        if (inOl) { html += '</ol>'; inOl = false; }
+        if (inTable) { html += '</tbody></table></div>'; inTable = false; tableHeaderDone = false; }
+      };
+
+      for (let i = 0; i < lines.length; i++) {
+        const rawLine = lines[i];
+        const line = rawLine.trim();
+
+        if (!line) {
+          closeListsAndTable();
+          continue;
+        }
+
+        // Tabla Markdown
+        if (line.startsWith('|') && line.endsWith('|')) {
+          if (inUl) { html += '</ul>'; inUl = false; }
+          if (inOl) { html += '</ol>'; inOl = false; }
+          const cells = line.slice(1, -1).split('|').map(c => c.trim());
+          // Ignorar fila separadora | :--- | :--- |
+          if (cells.every(c => /^:?-{2,}:?$/.test(c))) {
+            continue;
+          }
+          if (!inTable) {
+            inTable = true;
+            tableHeaderDone = false;
+            html += '<div style="overflow-x:auto; margin:16px 0 22px;"><table class="audit-table">';
+          }
+          if (!tableHeaderDone) {
+            html += '<thead><tr>' + cells.map(c => `<th>${formatInlineMd(c)}</th>`).join('') + '</tr></thead><tbody>';
+            tableHeaderDone = true;
+          } else {
+            html += '<tr>' + cells.map(c => `<td>${formatInlineMd(c)}</td>`).join('') + '</tr>';
+          }
+          continue;
+        }
+
+        if (inTable) {
+          html += '</tbody></table></div>';
+          inTable = false;
+          tableHeaderDone = false;
+        }
+
+        if (/^---+$/.test(line)) {
+          closeListsAndTable();
+          html += '<hr style="border:none; border-top:1px solid var(--border); margin:24px 0;" />';
+          continue;
+        }
+
+        if (line.startsWith('### ')) {
+          closeListsAndTable();
+          html += `<h3>${formatInlineMd(line.slice(4))}</h3>`;
+          continue;
+        }
+        if (line.startsWith('## ')) {
+          closeListsAndTable();
+          html += `<h2>${formatInlineMd(line.slice(3))}</h2>`;
+          continue;
+        }
+        if (line.startsWith('# ')) {
+          closeListsAndTable();
+          html += `<h1>${formatInlineMd(line.slice(2))}</h1>`;
+          continue;
+        }
+
+        if (line.startsWith('> ')) {
+          closeListsAndTable();
+          html += `<blockquote>${formatInlineMd(line.slice(2))}</blockquote>`;
+          continue;
+        }
+
+        if (/^\*\s+/.test(line)) {
+          if (inOl) { html += '</ol>'; inOl = false; }
+          if (!inUl) { html += '<ul>'; inUl = true; }
+          html += `<li>${formatInlineMd(line.replace(/^\*\s+/, ''))}</li>`;
+          continue;
+        }
+
+        if (/^\d+\.\s+/.test(line)) {
+          if (inUl) { html += '</ul>'; inUl = false; }
+          if (!inOl) { html += '<ol>'; inOl = true; }
+          html += `<li>${formatInlineMd(line.replace(/^\d+\.\s+/, ''))}</li>`;
+          continue;
+        }
+
+        closeListsAndTable();
+        html += `<p>${formatInlineMd(line)}</p>`;
+      }
+
+      closeListsAndTable();
       document.getElementById('guide-content').innerHTML = html;
     }
 
@@ -2062,44 +2252,71 @@
       btnEl.classList.add('active');
     }
 
-    function toggleMap() {
-      const mc = document.getElementById('map-container');
-      mc.classList.toggle('visible');
-      if (mc.classList.contains('visible')) {
+    function toggleMap(forceState) {
+      // Si el usuario está dentro de una ficha de vivienda, volvemos al panel principal para mostrar el mapa
+      if (window.location.hash && window.location.hash.startsWith('#/piso/')) {
+        closePropertyDetail();
+      }
+      const panel = document.getElementById('map-panel');
+      const btn = document.getElementById('btn-map-toggle');
+      const shouldBeVisible = typeof forceState === 'boolean'
+        ? forceState
+        : !panel.classList.contains('visible');
+
+      panel.classList.toggle('visible', shouldBeVisible);
+      btn.classList.toggle('btn-map-active', shouldBeVisible);
+      btn.textContent = shouldBeVisible ? 'Mapa Activo (Pulsar para salir)' : 'Mapa de Zaragoza';
+
+      if (shouldBeVisible) {
         if (!MAP_INSTANCE) {
           MAP_INSTANCE = L.map('map-container').setView([41.6488, -0.8891], 13);
-          L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; OpenStreetMap &copy; CARTO'
+          L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; OpenStreetMap contributors'
           }).addTo(MAP_INSTANCE);
         }
         setTimeout(() => {
           MAP_INSTANCE.invalidateSize();
-          renderProperties();
-        }, 150);
+          updateMapMarkers(getFilteredProperties());
+          panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 120);
       }
     }
+
+    window.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Escape') {
+        const panel = document.getElementById('map-panel');
+        if (panel && panel.classList.contains('visible')) {
+          toggleMap(false);
+        }
+      }
+    });
 
     function updateMapMarkers(props) {
       if (!MAP_INSTANCE) return;
       MAP_MARKERS.forEach(m => MAP_INSTANCE.removeLayer(m));
       MAP_MARKERS = [];
       props.forEach((p, idx) => {
-        if (!p.lat || !p.lon) return;
-        const color = !p.is_agency ? '#1E6F5C' : (p.total_points >= 78 ? '#2B5B84' : '#9A6700');
-        const marker = L.circleMarker([p.lat, p.lon], {
-          radius: 8,
+        const lat = p.map_lat || p.lat;
+        const lon = p.map_lon || p.lon;
+        if (!lat || !lon) return;
+        const color = !p.is_agency ? '#1E6F5C' : (p.total_points >= 75 ? '#2B5B84' : '#9A6700');
+        const marker = L.circleMarker([lat, lon], {
+          radius: 9,
           fillColor: color,
           color: '#FFFFFF',
           weight: 2,
-          fillOpacity: 0.9
+          fillOpacity: 0.92
         }).addTo(MAP_INSTANCE);
+        const gpsNote = p.has_exact_gps ? 'Ubicación GPS exacta del portal' : `Ubicación aproximada en ${p.neighborhood}`;
         marker.bindPopup(`
-          <div style="font-family:sans-serif; min-width:210px; color:#1E293B;">
-            <strong>#${idx + 1} · ${p.neighborhood} (${p.portal})</strong><br/>
+          <div style="font-family:sans-serif; min-width:225px; color:#1E293B; line-height:1.45;">
+            <strong>#${idx + 1} · ${p.neighborhood} (${p.zone_points} pts)</strong><br/>
+            <span style="font-size:0.78rem; color:#64748B;">${p.portal} · ${gpsNote}</span><br/>
             <span>${p.is_agency ? 'Agencia: ' + p.seller_name : 'Particular (0 € comisión)'}</span><br/>
-            <span style="color:#2B5B84;font-weight:700;">${fmtEur(p.price)}</span> (${p.sqm} m² · ${p.bedrooms} hab)<br/>
-            <span>Puntuación: <strong>${p.total_points.toFixed(1)} pts</strong></span><br/>
-            <a href="#/piso/${encodeURIComponent(p.id)}" style="color:#2B5B84;font-weight:600;">Abrir ficha interna</a>
+            <span style="color:#2B5B84;font-weight:700;font-size:1.02rem;">${fmtEur(p.price)}</span> (${p.sqm} m² · ${p.bedrooms} hab)<br/>
+            <span>Puntuación total: <strong>${p.total_points.toFixed(1)} pts</strong></span><br/>
+            <a href="#/piso/${encodeURIComponent(p.id)}" style="display:inline-block;margin-top:6px;color:#2B5B84;font-weight:700;">Ver ficha completa del inmueble</a>
           </div>
         `);
         MAP_MARKERS.push(marker);
