@@ -1,0 +1,2154 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Zaragoza Vivienda — Análisis y Valoración Inmobiliaria</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    :root {
+      /* Paleta Pantone Azul Calmado, Blancos Arquitectónicos y Grises Pizarra */
+      --bg: #F4F7FA;
+      --bg-card: #FFFFFF;
+      --bg-elevated: #EDF2F7;
+      --bg-subtle: #F8FAFC;
+      --text: #1E293B;
+      --text-secondary: #334155;
+      --text-muted: #64748B;
+      --primary: #2B5B84;
+      --primary-hover: #1E4566;
+      --primary-soft: #E6EFF7;
+      --primary-border: #BDD2E6;
+      --accent: #3B719F;
+      --success: #1E6F5C;
+      --success-bg: #EBF5F2;
+      --success-border: #B8DFD6;
+      --warning: #9A6700;
+      --warning-bg: #FEF7E6;
+      --warning-border: #F2D99B;
+      --danger: #9E3B33;
+      --danger-bg: #FDECEB;
+      --danger-border: #F3C2BE;
+      --border: #DCE4EE;
+      --border-subtle: #E8EEF5;
+      --radius: 8px;
+      --shadow: 0 1px 3px rgba(15, 23, 42, 0.05), 0 1px 2px rgba(15, 23, 42, 0.03);
+      --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.07);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.55;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* CABECERA PROFESIONAL */
+    header {
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 28px;
+      position: sticky;
+      top: 0;
+      z-index: 900;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+    }
+
+    .header-inner {
+      max-width: 1440px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      cursor: pointer;
+    }
+
+    .brand-mark {
+      width: 38px;
+      height: 38px;
+      border-radius: 6px;
+      background: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: #FFFFFF;
+    }
+
+    .brand h1 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: -0.015em;
+      color: var(--text);
+    }
+
+    .brand p {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .scan-badge {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.76rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .pulse-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--primary);
+    }
+
+    button, .btn {
+      cursor: pointer;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      padding: 8px 14px;
+      font-weight: 600;
+      font-size: 0.82rem;
+      transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      text-decoration: none;
+      font-family: inherit;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #FFFFFF;
+    }
+    .btn-primary:hover {
+      background: var(--primary-hover);
+    }
+
+    .btn-secondary {
+      background: var(--bg-card);
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover {
+      background: var(--bg-elevated);
+      border-color: #CBD5E1;
+    }
+
+    .btn-outline-blue {
+      background: var(--primary-soft);
+      color: var(--primary);
+      border: 1px solid var(--primary-border);
+    }
+    .btn-outline-blue:hover {
+      background: #D6E6F3;
+    }
+
+    /* CONTENEDOR PRINCIPAL */
+    .container {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 24px 28px 60px;
+    }
+
+    /* BANDA DE INDICADORES (KPIs) */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 14px;
+      margin-bottom: 22px;
+    }
+
+    .kpi-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .kpi-card .kpi-label {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .kpi-card .kpi-value {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .kpi-card .kpi-sub {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* NAVEGACIÓN DE PESTAÑAS */
+    .nav-tabs {
+      display: flex;
+      gap: 4px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 22px;
+      overflow-x: auto;
+    }
+
+    .tab-btn {
+      background: transparent;
+      color: var(--text-muted);
+      border: none;
+      border-bottom: 2px solid transparent;
+      padding: 10px 18px;
+      border-radius: 0;
+      font-weight: 600;
+      font-size: 0.86rem;
+    }
+
+    .tab-btn:hover {
+      color: var(--primary);
+      background: rgba(43, 91, 132, 0.04);
+    }
+
+    .tab-btn.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+      background: var(--primary-soft);
+    }
+
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+
+    /* BARRA DE FILTROS */
+    .filters-bar {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 18px;
+      margin-bottom: 22px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      align-items: flex-end;
+      box-shadow: var(--shadow);
+    }
+
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      flex: 1;
+      min-width: 145px;
+    }
+
+    .filter-group label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    input, select, textarea {
+      background: #FFFFFF;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px 11px;
+      border-radius: 6px;
+      font-size: 0.84rem;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.15s ease;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(43, 91, 132, 0.12);
+    }
+
+    /* REJILLA PRINCIPAL DE VIVIENDAS (ESTÉTICA LIMPIA Y EDITORIAL) */
+    .property-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 20px;
+    }
+
+    .clean-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+      box-shadow: var(--shadow);
+    }
+
+    .clean-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--primary-border);
+      box-shadow: var(--shadow-md);
+    }
+
+    .clean-card.discarded {
+      opacity: 0.65;
+      border-color: var(--danger-border);
+    }
+
+    .clean-card-media {
+      position: relative;
+      height: 215px;
+      background: var(--bg-elevated);
+      overflow: hidden;
+      cursor: pointer;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .clean-card-media img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.3s ease;
+    }
+
+    .clean-card:hover .clean-card-media img {
+      transform: scale(1.02);
+    }
+
+    .card-top-overlay {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      right: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      pointer-events: none;
+    }
+
+    .rank-chip {
+      background: rgba(255, 255, 255, 0.94);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 4px 10px;
+      border-radius: 5px;
+      font-size: 0.74rem;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+    }
+
+    .zone-pill-mini {
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.66rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .z-x4 { background: var(--primary-soft); color: var(--primary); }
+    .z-x3 { background: var(--success-bg); color: var(--success); }
+    .z-x2 { background: var(--warning-bg); color: var(--warning); }
+    .z-x1 { background: var(--danger-bg); color: var(--danger); }
+
+    .score-floating {
+      padding: 5px 10px;
+      border-radius: 5px;
+      font-weight: 700;
+      font-size: 0.88rem;
+      line-height: 1;
+      background: rgba(255, 255, 255, 0.96);
+      border: 1px solid var(--border);
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.1);
+    }
+    .score-floating small {
+      font-size: 0.65rem;
+      font-weight: 600;
+      opacity: 0.85;
+      margin-left: 2px;
+    }
+    .score-high { color: var(--primary); border-color: var(--primary-border); }
+    .score-mid { color: var(--warning); border-color: var(--warning-border); }
+    .score-low { color: var(--danger); border-color: var(--danger-border); }
+
+    .photo-mini-nav {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      padding: 2px 6px;
+      font-size: 0.71rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      z-index: 5;
+    }
+    .photo-mini-nav button {
+      padding: 1px 5px;
+      font-size: 0.72rem;
+      background: transparent;
+      border: none;
+      color: var(--text);
+    }
+    .photo-mini-nav button:hover {
+      background: var(--bg-elevated);
+    }
+
+    .portal-mini-tag {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      padding: 3px 8px;
+      border-radius: 5px;
+      font-size: 0.69rem;
+      font-weight: 600;
+      z-index: 4;
+    }
+
+    .clean-card-body {
+      padding: 16px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      flex: 1;
+    }
+
+    .clean-price-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 8px;
+    }
+
+    .clean-price {
+      font-size: 1.32rem;
+      font-weight: 700;
+      color: var(--primary);
+      letter-spacing: -0.02em;
+    }
+
+    .clean-quota {
+      font-size: 0.77rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .clean-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text);
+      line-height: 1.35;
+      display: -webkit-box;
+      -webkit-line-clamp: 1;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      cursor: pointer;
+    }
+    .clean-title:hover {
+      color: var(--primary);
+    }
+
+    .clean-location {
+      font-size: 0.79rem;
+      color: var(--text-muted);
+      margin-top: -4px;
+      display: -webkit-box;
+      -webkit-line-clamp: 1;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .clean-specs {
+      display: flex;
+      gap: 10px;
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      padding: 8px 10px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      flex-wrap: wrap;
+    }
+
+    .clean-pills-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 2px;
+    }
+
+    .pill-seller {
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 4px;
+      display: inline-flex;
+      align-items: center;
+      letter-spacing: 0.01em;
+    }
+    .pill-particular {
+      background: var(--success-bg);
+      color: var(--success);
+      border: 1px solid var(--success-border);
+    }
+    .pill-nofee {
+      background: var(--warning-bg);
+      color: var(--warning);
+      border: 1px solid var(--warning-border);
+    }
+    .pill-agency {
+      background: var(--bg-elevated);
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
+    }
+
+    .clean-card-footer {
+      padding: 11px 18px;
+      border-top: 1px solid var(--border-subtle);
+      background: var(--bg-subtle);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* VISTA PÁGINA INTERNA DE CADA VIVIENDA (#/piso/<id>) */
+    #view-property-detail {
+      display: none;
+    }
+    #view-property-detail.active {
+      display: block;
+    }
+
+    .detail-topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+      padding: 12px 18px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .detail-hero {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-bottom: 22px;
+      box-shadow: var(--shadow);
+    }
+
+    .detail-hero-grid {
+      display: grid;
+      grid-template-columns: 1.25fr 1fr;
+    }
+    @media (max-width: 1024px) {
+      .detail-hero-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .detail-gallery {
+      background: var(--bg-elevated);
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid var(--border);
+    }
+
+    .detail-main-photo {
+      position: relative;
+      height: 420px;
+      background: #E2E8F0;
+      overflow: hidden;
+    }
+
+    .detail-main-photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .detail-thumbs {
+      display: flex;
+      gap: 8px;
+      padding: 12px 14px;
+      overflow-x: auto;
+      background: var(--bg-subtle);
+      border-top: 1px solid var(--border);
+    }
+
+    .detail-thumbs img {
+      width: 68px;
+      height: 50px;
+      object-fit: cover;
+      border-radius: 4px;
+      cursor: pointer;
+      opacity: 0.65;
+      border: 2px solid transparent;
+      transition: all 0.15s;
+    }
+
+    .detail-thumbs img.active, .detail-thumbs img:hover {
+      opacity: 1;
+      border-color: var(--primary);
+    }
+
+    .detail-summary-pane {
+      padding: 26px 28px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 18px;
+    }
+
+    .detail-fin-box {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 14px 16px;
+    }
+
+    .detail-fin-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      font-size: 0.83rem;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .detail-fin-row:last-child {
+      border-bottom: none;
+    }
+
+    .detail-sections-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 22px;
+    }
+    @media (max-width: 980px) {
+      .detail-sections-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .detail-panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px 24px;
+      box-shadow: var(--shadow);
+    }
+
+    .detail-panel h3 {
+      font-size: 0.86rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--primary);
+      margin-bottom: 14px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* FICHA TÉCNICA EN VERTICAL SEPARADA POR FINAS LÍNEAS */
+    .vertical-spec-list {
+      display: flex;
+      flex-direction: column;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .vertical-spec-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 16px;
+      padding: 10px 4px;
+      border-bottom: 1px solid var(--border-subtle);
+      font-size: 0.84rem;
+    }
+
+    .vertical-spec-row:hover {
+      background-color: var(--bg-subtle);
+    }
+
+    .vertical-spec-label {
+      color: var(--text-muted);
+      font-weight: 500;
+      flex-shrink: 0;
+    }
+
+    .vertical-spec-value {
+      color: var(--text);
+      font-weight: 600;
+      text-align: right;
+    }
+
+    /* BARRAS DE FACTORES 1-10 */
+    .scores-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+      gap: 10px;
+    }
+
+    .score-item {
+      background: var(--bg-subtle);
+      padding: 9px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .score-item-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.76rem;
+      margin-bottom: 5px;
+    }
+
+    .score-item-name {
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    .score-item-val {
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .progress-bg {
+      height: 5px;
+      background: var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      border-radius: 3px;
+    }
+
+    .badge-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .badge {
+      padding: 4px 9px;
+      border-radius: 4px;
+      font-size: 0.73rem;
+      font-weight: 600;
+      background: var(--primary-soft);
+      color: var(--primary);
+      border: 1px solid var(--primary-border);
+    }
+
+    .badge-alert {
+      background: var(--danger-bg);
+      color: var(--danger);
+      border: 1px solid var(--danger-border);
+    }
+
+    /* TABLA DE AUDITORÍA */
+    .audit-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8rem;
+    }
+    .audit-table th, .audit-table td {
+      padding: 10px 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--border-subtle);
+      vertical-align: top;
+    }
+    .audit-table th {
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.7rem;
+      letter-spacing: 0.04em;
+      background: var(--bg-subtle);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .status-verificado {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: 0.69rem;
+      font-weight: 600;
+      background: var(--success-bg);
+      color: var(--success);
+      border: 1px solid var(--success-border);
+    }
+
+    .status-neutro {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: 0.69rem;
+      font-weight: 600;
+      background: var(--bg-elevated);
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+
+    /* MAPA */
+    #map-container {
+      height: 540px;
+      width: 100%;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      margin-bottom: 22px;
+      display: none;
+      box-shadow: var(--shadow);
+    }
+    #map-container.visible {
+      display: block;
+    }
+
+    /* CONFIGURACIÓN DE PESOS Y SELECTOR DE ZONAS */
+    .weights-panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: var(--shadow);
+      margin-bottom: 22px;
+    }
+
+    .weight-slider-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 14px;
+      margin-top: 16px;
+    }
+
+    .weight-control {
+      background: var(--bg-subtle);
+      padding: 14px 16px;
+      border-radius: 6px;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .weight-control-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+      gap: 8px;
+    }
+
+    .weight-control label {
+      font-weight: 600;
+      font-size: 0.84rem;
+      color: var(--text);
+    }
+
+    .weight-val-badge {
+      background: var(--primary);
+      color: #FFFFFF;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    .weight-desc {
+      font-size: 0.74rem;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--primary);
+      padding: 0;
+    }
+
+    .zone-selector-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .zone-selector-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 12px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+    }
+
+    .zone-selector-name {
+      font-size: 0.83rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .zone-selector-item select {
+      padding: 5px 8px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      min-width: 120px;
+    }
+
+    /* GUÍA MARKDOWN */
+    .guide-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px 32px;
+      box-shadow: var(--shadow);
+    }
+    .guide-box h2 {
+      color: var(--primary);
+      margin: 22px 0 10px;
+      font-size: 1.15rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 6px;
+    }
+    .guide-box ul, .guide-box ol {
+      margin-left: 22px;
+      margin-bottom: 14px;
+    }
+    .guide-box li {
+      margin-bottom: 6px;
+      font-size: 0.9rem;
+    }
+
+    /* MODAL AÑADIR PISO */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      padding: 20px;
+    }
+    .modal-backdrop.open {
+      display: flex;
+    }
+    .modal {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      max-width: 680px;
+      width: 100%;
+      padding: 24px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: var(--shadow-md);
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .form-full {
+      grid-column: 1 / -1;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--primary);
+      color: #FFFFFF;
+      padding: 11px 18px;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 0.84rem;
+      box-shadow: var(--shadow-md);
+      display: none;
+      z-index: 3000;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-inner">
+      <div class="brand" onclick="closePropertyDetail()">
+        <div class="brand-mark">ZGZ</div>
+        <div>
+          <h1>Zaragoza Vivienda — Análisis y Selección</h1>
+          <p>Valoración técnica y financiera auditable sobre Fotocasa, Pisos.com, Tecnocasa y Redpiso</p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <div class="scan-badge">
+          <span class="pulse-dot"></span>
+          <span id="last-scan-label">Cargando datos...</span>
+        </div>
+        <button class="btn-secondary" onclick="toggleMap()">Mapa de Zaragoza</button>
+        <button class="btn-secondary" onclick="openAddModal()">Añadir inmueble</button>
+        <button class="btn-primary" id="btn-scan" onclick="triggerDailyScan()">Actualizar portales</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <!-- VISTA 1: PANEL PRINCIPAL -->
+    <div id="view-main-dashboard">
+      <div class="kpi-grid" id="kpi-container"></div>
+
+      <div class="nav-tabs">
+        <button class="tab-btn active" onclick="switchTab('ranking', this)">Catálogo de Viviendas</button>
+        <button class="tab-btn" onclick="switchTab('weights', this)">Pesos y Selector de Zonas</button>
+        <button class="tab-btn" onclick="switchTab('neighborhoods', this)">Tabla de Barrios Zaragoza</button>
+        <button class="tab-btn" onclick="switchTab('guide', this)">Guía Financiera e ITP Aragón</button>
+      </div>
+
+      <div id="map-container"></div>
+
+      <!-- TAB 1: RANKING DE TARJETAS LIMPIAS -->
+      <div id="tab-ranking" class="tab-content active">
+        <div class="filters-bar">
+          <div class="filter-group" style="flex: 1.6;">
+            <label>Buscar por calle, barrio o referencia</label>
+            <input type="text" id="f-search" placeholder="Ej. Actur, Universidad, Venecia, terraza..." oninput="renderProperties()" />
+          </div>
+          <div class="filter-group">
+            <label>Grupo de Zona</label>
+            <select id="f-zone" onchange="renderProperties()">
+              <option value="all">Todas las zonas</option>
+              <option value="x4">Grupo x4 (Muy Buena)</option>
+              <option value="x3">Grupo x3 (Media-Buena)</option>
+              <option value="x2">Grupo x2 (Media)</option>
+              <option value="x1">Grupo x1 (Económica)</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label>Tipo de Vendedor</label>
+            <select id="f-seller" onchange="renderProperties()">
+              <option value="all">Todos (Particular + Agencia)</option>
+              <option value="particular">Solo Particulares (0 € comisión)</option>
+              <option value="no_fee">Sin comisión comprador</option>
+              <option value="agency">Solo Agencias</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label>Portal Inmobiliario</label>
+            <select id="f-portal" onchange="renderProperties()">
+              <option value="all">Todos los portales</option>
+              <option value="Fotocasa">Fotocasa</option>
+              <option value="Pisos.com">Pisos.com</option>
+              <option value="Tecnocasa">Tecnocasa</option>
+              <option value="Redpiso">Redpiso</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label>Precio Máximo Compra</label>
+            <select id="f-maxprice" onchange="renderProperties()">
+              <option value="999999">Sin límite</option>
+              <option value="135000">Hasta 135.000 € (Estrategia Reforma)</option>
+              <option value="160000">Hasta 160.000 €</option>
+              <option value="185000">Hasta 185.000 €</option>
+              <option value="200000">Hasta 200.000 €</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label>Seguimiento</label>
+            <select id="f-status" onchange="renderProperties()">
+              <option value="active">Activos (Sin descartados)</option>
+              <option value="favorito">Solo Favoritos</option>
+              <option value="contactar">Para Contactar / Visitar</option>
+              <option value="all">Mostrar todos (incl. descartados)</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="properties-list" class="property-grid"></div>
+      </div>
+
+      <!-- TAB 2: CONFIGURACIÓN DE PESOS Y SELECTOR DE ZONAS -->
+      <div id="tab-weights" class="tab-content">
+        <div class="weights-panel">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; border-bottom:1px solid var(--border); padding-bottom:16px;">
+            <div>
+              <h2 style="font-size:1.15rem; color:var(--text);">Configuración de Ponderaciones y Selector de Zonas</h2>
+              <p style="color:var(--text-muted); font-size:0.84rem;">
+                Ajusta los pesos (1 a 10), las bonificaciones/penalizaciones y el grupo multiplicador (x4, x3, x2, x1) de cada barrio. El recálculo es instantáneo sobre SQLite sin llamadas de red.
+              </p>
+            </div>
+            <button class="btn-primary" onclick="saveWeights()">Guardar cambios y recalcular</button>
+          </div>
+
+          <h3 style="margin-top:20px; font-size:0.86rem; color:var(--primary); text-transform:uppercase; letter-spacing:0.04em;">
+            1. Selector de Grupo por Barrio (x4 / x3 / x2 / x1)
+          </h3>
+          <p style="font-size:0.8rem; color:var(--text-muted); margin-top:4px;">
+            Cambia cualquier barrio de grupo (por ejemplo, La Paz en x1 y Venecia en x2) y pulsa «Guardar cambios y recalcular».
+          </p>
+          <div class="zone-selector-grid" id="zone-selectors-container"></div>
+
+          <h3 style="margin-top:26px; font-size:0.86rem; color:var(--primary); text-transform:uppercase; letter-spacing:0.04em;">
+            2. Pesos de los 13 Factores de Valoración (Escala 1 a 10)
+          </h3>
+          <div class="weight-slider-grid" id="weights-sliders-container"></div>
+
+          <h3 style="margin-top:26px; font-size:0.86rem; color:var(--primary); text-transform:uppercase; letter-spacing:0.04em;">
+            3. Bonificaciones Fijas y Penalización por Agencia (Puntos Directos)
+          </h3>
+          <div class="weight-slider-grid" id="bonuses-sliders-container" style="margin-top:12px;"></div>
+        </div>
+      </div>
+
+      <!-- TAB 3: REFERENCIA DE BARRIOS -->
+      <div id="tab-neighborhoods" class="tab-content">
+        <div class="weights-panel">
+          <h2 style="font-size:1.15rem; margin-bottom:6px;">Clasificación Actual de Barrios y Precios de Referencia en Zaragoza</h2>
+          <p style="color:var(--text-muted); font-size:0.84rem; margin-bottom:18px;">
+            Precios medios reales por m² en Zaragoza capital utilizados para medir el descuento de compra y el valor estimado tras reforma.
+          </p>
+          <div id="neighborhoods-grid" class="property-grid"></div>
+        </div>
+      </div>
+
+      <!-- TAB 4: GUÍA DE COMPRA -->
+      <div id="tab-guide" class="tab-content">
+        <div class="guide-box" id="guide-content"></div>
+      </div>
+    </div>
+
+    <!-- VISTA 2: PÁGINA INTERNA DE DETALLE DE CADA VIVIENDA (#/piso/<id>) -->
+    <div id="view-property-detail">
+      <div class="detail-topbar">
+        <button class="btn-secondary" onclick="closePropertyDetail()">Volver al listado principal</button>
+        <div style="display:flex; gap:8px; align-items:center;" id="detail-prev-next"></div>
+      </div>
+      <div id="property-detail-content"></div>
+    </div>
+  </div>
+
+  <!-- MODAL PARA AÑADIR PISO MANUALMENTE -->
+  <div class="modal-backdrop" id="add-modal">
+    <div class="modal">
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:12px;">
+        <h3 style="font-size:1.05rem; color:var(--text);">Analizar y Añadir Inmueble a la Base de Datos</h3>
+        <button class="btn-secondary" onclick="closeAddModal()">Cerrar</button>
+      </div>
+      <div class="form-grid">
+        <div class="filter-group form-full">
+          <label>Título del anuncio</label>
+          <input type="text" id="m-title" placeholder="Ej. Piso exterior en Actur con terraza y ascensor" />
+        </div>
+        <div class="filter-group">
+          <label>Barrio (Zaragoza)</label>
+          <input type="text" id="m-neighborhood" placeholder="Ej. Actur, Universidad, Parque Venecia..." value="Actur" />
+        </div>
+        <div class="filter-group">
+          <label>Calle / Ubicación</label>
+          <input type="text" id="m-street" placeholder="Ej. Calle Gertrudis Gómez de Avellaneda" />
+        </div>
+        <div class="filter-group">
+          <label>Precio de Venta (€)</label>
+          <input type="number" id="m-price" value="132000" />
+        </div>
+        <div class="filter-group">
+          <label>Superficie Construida (m²)</label>
+          <input type="number" id="m-sqm" value="78" />
+        </div>
+        <div class="filter-group">
+          <label>Habitaciones</label>
+          <input type="number" id="m-bedrooms" value="3" />
+        </div>
+        <div class="filter-group">
+          <label>Planta (Altura)</label>
+          <input type="number" id="m-floor" value="4" />
+        </div>
+        <div class="filter-group">
+          <label>Tipo de Vendedor</label>
+          <select id="m-agency">
+            <option value="false">Particular (0 € comisión / Sin penalización)</option>
+            <option value="true">Agencia Inmobiliaria (-15 pts)</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Nombre Anunciante / Agencia</label>
+          <input type="text" id="m-seller-name" placeholder="Ej. Particular / Nombre de Agencia" />
+        </div>
+        <div class="filter-group">
+          <label>Portal Origen</label>
+          <select id="m-portal">
+            <option value="Fotocasa">Fotocasa</option>
+            <option value="Pisos.com">Pisos.com</option>
+            <option value="Tecnocasa">Tecnocasa</option>
+            <option value="Redpiso">Redpiso</option>
+            <option value="Idealista">Idealista</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>URL directa del anuncio</label>
+          <input type="text" id="m-url" placeholder="https://www.fotocasa.es/es/comprar/vivienda/..." />
+        </div>
+        <div class="filter-group form-full">
+          <label>URL de la imagen principal (opcional; se extrae automáticamente si dejas la URL del anuncio)</label>
+          <input type="text" id="m-photo" placeholder="https://..." />
+        </div>
+        <div class="filter-group">
+          <label>Ascensor / Terraza / Garaje / Trastero</label>
+          <div style="display:flex; gap:12px; padding-top:6px; flex-wrap:wrap; font-size:0.82rem;">
+            <label><input type="checkbox" id="m-elev" checked /> Ascensor</label>
+            <label><input type="checkbox" id="m-terr" checked /> Terraza</label>
+            <label><input type="checkbox" id="m-gar" /> Garaje</label>
+            <label><input type="checkbox" id="m-stor" /> Trastero</label>
+          </div>
+        </div>
+        <div class="filter-group form-full">
+          <label>Descripción completa del anuncio</label>
+          <textarea id="m-desc" rows="3" placeholder="Pega aquí el texto del anuncio para analizar ventanas, reforma, orientación, calefacción..."></textarea>
+        </div>
+      </div>
+      <div style="margin-top:18px; display:flex; justify-content:flex-end; gap:10px;">
+        <button class="btn-secondary" onclick="closeAddModal()">Cancelar</button>
+        <button class="btn-primary" onclick="submitNewProperty()">Evaluar y guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast-msg"></div>
+
+  <script>
+    let APP_STATE = null;
+    let MAP_INSTANCE = null;
+    let MAP_MARKERS = [];
+    let PHOTO_INDEX_MAP = {};
+    let CURRENT_FILTERED_IDS = [];
+
+    function showToast(msg) {
+      const t = document.getElementById('toast-msg');
+      t.textContent = msg;
+      t.style.display = 'block';
+      setTimeout(() => { t.style.display = 'none'; }, 3500);
+    }
+
+    function fmtEur(n) {
+      return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n || 0);
+    }
+
+    function proxiedImg(url) {
+      if (!url || !url.startsWith('http')) return '';
+      return `/api/image-proxy?url=${encodeURIComponent(url)}`;
+    }
+
+    async function loadState() {
+      const res = await fetch('/api/state');
+      APP_STATE = await res.json();
+      renderAll();
+      handleHashRoute();
+    }
+
+    window.addEventListener('hashchange', handleHashRoute);
+
+    function handleHashRoute() {
+      if (!APP_STATE) return;
+      const hash = window.location.hash || '';
+      if (hash.startsWith('#/piso/')) {
+        const propId = decodeURIComponent(hash.replace('#/piso/', ''));
+        renderPropertyDetailPage(propId);
+      } else {
+        document.getElementById('view-property-detail').classList.remove('active');
+        document.getElementById('view-main-dashboard').style.display = 'block';
+      }
+    }
+
+    function openPropertyDetail(propId) {
+      window.location.hash = `#/piso/${encodeURIComponent(propId)}`;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function closePropertyDetail() {
+      window.location.hash = '#/';
+    }
+
+    function renderAll() {
+      if (!APP_STATE) return;
+      const ls = APP_STATE.last_scan;
+      document.getElementById('last-scan-label').textContent = ls
+        ? `Actualizado: ${ls.run_at} (${ls.total_Listings || APP_STATE.properties.length} inmuebles)`
+        : `Servidor activo: ${APP_STATE.server_time}`;
+      renderKPIs();
+      renderProperties();
+      renderWeightsSliders();
+      renderNeighborhoodsRef();
+      renderGuide();
+    }
+
+    function renderKPIs() {
+      const props = APP_STATE.properties.filter(p => !p.hard_discard && p.user_status !== 'descartado');
+      const particulares = props.filter(p => !p.is_agency);
+      const sweetDeals = props.filter(p => p.price <= 135000);
+      const topProp = props[0];
+      const fin = APP_STATE.profile.financials;
+
+      const kpis = [
+        {
+          label: 'Límite Financiero Mensual',
+          value: `${fmtEur(fin.max_monthly_mortgage_eur)}/mes`,
+          sub: `1/3 de ${fmtEur(fin.net_monthly_income_eur)} netos · Ahorro ${fmtEur(fin.available_savings_min_eur)}-${fmtEur(fin.available_savings_max_eur)}`
+        },
+        {
+          label: 'Candidatos Válidos',
+          value: `${props.length} viviendas`,
+          sub: `De ${APP_STATE.properties.length} analizadas en 4 portales`
+        },
+        {
+          label: 'Trato Directo vs Agencia',
+          value: `${particulares.length} particulares`,
+          sub: `${props.length - particulares.length} de agencia (penalizados en puntos)`
+        },
+        {
+          label: 'Oportunidades < 135.000 €',
+          value: `${sweetDeals.length} viviendas`,
+          sub: `Aptas para estrategia de reforma eficiente`
+        },
+        {
+          label: 'Mejor Puntuación Actual',
+          value: topProp ? `${topProp.total_points.toFixed(1)} pts` : '-',
+          sub: topProp ? `${topProp.neighborhood} · ${fmtEur(topProp.price)}` : 'Sin datos'
+        }
+      ];
+
+      document.getElementById('kpi-container').innerHTML = kpis.map(k => `
+        <div class="kpi-card">
+          <div class="kpi-label">${k.label}</div>
+          <div class="kpi-value">${k.value}</div>
+          <div class="kpi-sub">${k.sub}</div>
+        </div>
+      `).join('');
+    }
+
+    function changePhoto(propId, delta, ev) {
+      if (ev) ev.stopPropagation();
+      const prop = APP_STATE.properties.find(x => x.id === propId);
+      if (!prop || !prop.photos || !prop.photos.length) return;
+      const cur = PHOTO_INDEX_MAP[propId] || 0;
+      const next = (cur + delta + prop.photos.length) % prop.photos.length;
+      PHOTO_INDEX_MAP[propId] = next;
+      const imgEl = document.getElementById(`img-${propId}`);
+      const countEl = document.getElementById(`img-count-${propId}`);
+      if (imgEl) imgEl.src = proxiedImg(prop.photos[next]);
+      if (countEl) countEl.textContent = `${next + 1}/${prop.photos.length}`;
+    }
+
+    function selectDetailPhoto(propId, idx) {
+      const prop = APP_STATE.properties.find(x => x.id === propId);
+      if (!prop || !prop.photos || !prop.photos[idx]) return;
+      PHOTO_INDEX_MAP[propId] = idx;
+      const mainImg = document.getElementById('detail-main-img');
+      const countEl = document.getElementById('detail-img-count');
+      if (mainImg) mainImg.src = proxiedImg(prop.photos[idx]);
+      if (countEl) countEl.textContent = `${idx + 1} / ${prop.photos.length}`;
+      document.querySelectorAll('.detail-thumb-item').forEach((el, i) => {
+        el.classList.toggle('active', i === idx);
+      });
+    }
+
+    function getFilteredProperties() {
+      const q = (document.getElementById('f-search')?.value || '').toLowerCase();
+      const z = document.getElementById('f-zone')?.value || 'all';
+      const sellerFilter = document.getElementById('f-seller')?.value || 'all';
+      const portalFilter = document.getElementById('f-portal')?.value || 'all';
+      const maxP = parseFloat(document.getElementById('f-maxprice')?.value || '999999');
+      const st = document.getElementById('f-status')?.value || 'active';
+
+      return APP_STATE.properties.filter(p => {
+        if (st === 'active' && (p.hard_discard || p.user_status === 'descartado')) return false;
+        if (st === 'favorito' && p.user_status !== 'favorito') return false;
+        if (st === 'contactar' && p.user_status !== 'contactar') return false;
+        if (z !== 'all' && p.zone_tier !== z) return false;
+        if (portalFilter !== 'all' && p.portal !== portalFilter) return false;
+        if (sellerFilter === 'particular' && p.is_agency) return false;
+        if (sellerFilter === 'no_fee' && (p.is_agency && !p.buyer_fee_exempt)) return false;
+        if (sellerFilter === 'agency' && !p.is_agency) return false;
+        if (p.price > maxP) return false;
+        if (q) {
+          const hay = `${p.title} ${p.neighborhood} ${p.street} ${p.description} ${p.portal} ${p.seller_name}`.toLowerCase();
+          if (!hay.includes(q)) return false;
+        }
+        return true;
+      });
+    }
+
+    function renderProperties() {
+      const filtered = getFilteredProperties();
+      CURRENT_FILTERED_IDS = filtered.map(p => p.id);
+
+      if (MAP_INSTANCE && document.getElementById('map-container').classList.contains('visible')) {
+        updateMapMarkers(filtered);
+      }
+
+      const container = document.getElementById('properties-list');
+      if (!filtered.length) {
+        container.innerHTML = `<div class="weights-panel" style="grid-column:1/-1;text-align:center;color:var(--text-muted);">No hay viviendas que coincidan con los filtros seleccionados.</div>`;
+        return;
+      }
+
+      container.innerHTML = filtered.map((p, idx) => {
+        const ev = p.evaluation;
+        const fin = ev.financials;
+        const scoreClass = p.total_points >= 78 ? 'score-high' : (p.total_points >= 62 ? 'score-mid' : 'score-low');
+        const photos = (p.photos && p.photos.length) ? p.photos : (p.image_url ? [p.image_url] : []);
+        const curPhotoIdx = PHOTO_INDEX_MAP[p.id] || 0;
+        const currentPhotoUrl = photos.length ? proxiedImg(photos[curPhotoIdx]) : '';
+
+        let sellerPill = '';
+        if (!p.is_agency) {
+          sellerPill = `<span class="pill-seller pill-particular">Particular · 0 € comisión</span>`;
+        } else if (p.buyer_fee_exempt) {
+          sellerPill = `<span class="pill-seller pill-nofee">Agencia · 0 € com. comprador</span>`;
+        } else {
+          sellerPill = `<span class="pill-seller pill-agency">Agencia (${ev.bonuses.agency_penalty_points} pts)</span>`;
+        }
+
+        const floorLabel = (p.floor !== null && p.floor !== undefined) ? `${p.floor}ª planta` : 'Planta N/D';
+
+        return `
+          <article class="clean-card ${p.hard_discard ? 'discarded' : ''}">
+            <div class="clean-card-media" onclick="openPropertyDetail('${p.id}')">
+              ${currentPhotoUrl ? `<img id="img-${p.id}" src="${currentPhotoUrl}" alt="${p.title}" loading="lazy" />` : `<div style="height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:0.82rem;">Sin fotografía</div>`}
+
+              <div class="card-top-overlay">
+                <div class="rank-chip">
+                  <span>#${idx + 1}</span>
+                  <span class="zone-pill-mini z-${p.zone_tier}">Zona ${p.zone_tier.toUpperCase()}</span>
+                </div>
+                <div class="score-floating ${scoreClass}">
+                  ${p.total_points.toFixed(1)}<small>pts</small>
+                </div>
+              </div>
+
+              <span class="portal-mini-tag">${p.portal}</span>
+
+              ${photos.length > 1 ? `
+                <div class="photo-mini-nav" onclick="event.stopPropagation()">
+                  <button onclick="changePhoto('${p.id}', -1, event)">Anterior</button>
+                  <span id="img-count-${p.id}">${curPhotoIdx + 1}/${photos.length}</span>
+                  <button onclick="changePhoto('${p.id}', 1, event)">Siguiente</button>
+                </div>
+              ` : ''}
+            </div>
+
+            <div class="clean-card-body">
+              <div class="clean-price-row">
+                <div>
+                  <span class="clean-price">${fmtEur(p.price)}</span>
+                  ${p.previous_price && p.previous_price > p.price ? `<span style="font-size:0.74rem;color:var(--success);margin-left:6px;font-weight:600;">Bajó desde ${fmtEur(p.previous_price)}</span>` : ''}
+                </div>
+                <span class="clean-quota">Cuota: ${fmtEur(fin.monthly_quota_90_eur)}/mes</span>
+              </div>
+
+              <div class="clean-title" onclick="openPropertyDetail('${p.id}')" title="${p.title}">
+                ${p.title}
+              </div>
+              <div class="clean-location">
+                ${p.neighborhood} · ${p.street}
+              </div>
+
+              <div class="clean-specs">
+                <span><strong>${p.sqm}</strong> m² (${fmtEur(ev.price_per_sqm)}/m²)</span>
+                <span>·</span>
+                <span><strong>${p.bedrooms}</strong> hab.</span>
+                <span>·</span>
+                <span>${floorLabel}</span>
+                ${p.has_terrace ? `<span>· Terraza</span>` : ''}
+                ${p.has_garage ? `<span>· Garaje</span>` : ''}
+              </div>
+
+              <div class="clean-pills-row">
+                ${sellerPill}
+                <span style="font-size:0.74rem; color:var(--text-muted);">
+                  Total c/gastos y reforma: <strong style="color:var(--text);">${fmtEur(fin.total_investment_eur)}</strong>
+                </span>
+              </div>
+            </div>
+
+            <div class="clean-card-footer">
+              <select onchange="updatePropertyStatus('${p.id}', this.value)" style="padding:5px 8px; font-size:0.75rem; background:#FFFFFF;">
+                <option value="nuevo" ${p.user_status === 'nuevo' ? 'selected' : ''}>Estado: Nuevo</option>
+                <option value="favorito" ${p.user_status === 'favorito' ? 'selected' : ''}>Favorito</option>
+                <option value="contactar" ${p.user_status === 'contactar' ? 'selected' : ''}>Contactar / Visitar</option>
+                <option value="visitado" ${p.user_status === 'visitado' ? 'selected' : ''}>Visitado</option>
+                <option value="descartado" ${p.user_status === 'descartado' ? 'selected' : ''}>Descartado</option>
+              </select>
+
+              <div style="display:flex; gap:6px; align-items:center;">
+                <a href="${p.url}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary" style="padding:6px 10px; font-size:0.74rem;" title="Abrir anuncio original en ${p.portal}">
+                  Portal
+                </a>
+                <button class="btn-outline-blue" style="padding:6px 12px; font-size:0.76rem;" onclick="openPropertyDetail('${p.id}')">
+                  Ver ficha completa
+                </button>
+              </div>
+            </div>
+          </article>
+        `;
+      }).join('');
+    }
+
+    function renderPropertyDetailPage(propId) {
+      const p = APP_STATE.properties.find(x => x.id === propId);
+      if (!p) {
+        closePropertyDetail();
+        return;
+      }
+
+      document.getElementById('view-main-dashboard').style.display = 'none';
+      const detailView = document.getElementById('view-property-detail');
+      detailView.classList.add('active');
+
+      const curIdxInList = CURRENT_FILTERED_IDS.indexOf(propId);
+      const prevId = curIdxInList > 0 ? CURRENT_FILTERED_IDS[curIdxInList - 1] : null;
+      const nextId = (curIdxInList >= 0 && curIdxInList < CURRENT_FILTERED_IDS.length - 1) ? CURRENT_FILTERED_IDS[curIdxInList + 1] : null;
+
+      document.getElementById('detail-prev-next').innerHTML = `
+        <span style="font-size:0.8rem; color:var(--text-muted); margin-right:6px;">
+          ${curIdxInList >= 0 ? `Vivienda #${curIdxInList + 1} de ${CURRENT_FILTERED_IDS.length}` : ''}
+        </span>
+        <button class="btn-secondary" ${!prevId ? 'disabled style="opacity:0.4;pointer-events:none;"' : ''} onclick="openPropertyDetail('${prevId || ''}')">Anterior</button>
+        <button class="btn-secondary" ${!nextId ? 'disabled style="opacity:0.4;pointer-events:none;"' : ''} onclick="openPropertyDetail('${nextId || ''}')">Siguiente</button>
+      `;
+
+      const ev = p.evaluation;
+      const fin = ev.financials;
+      const factorMeta = APP_STATE.profile.scoring_factors_1_to_10;
+      const auditMap = ev.audit_evidence || {};
+      const photos = (p.photos && p.photos.length) ? p.photos : (p.image_url ? [p.image_url] : []);
+      const curPhotoIdx = PHOTO_INDEX_MAP[p.id] || 0;
+      const currentPhotoUrl = photos.length ? proxiedImg(photos[curPhotoIdx]) : '';
+      const scoreClass = p.total_points >= 78 ? 'score-high' : (p.total_points >= 62 ? 'score-mid' : 'score-low');
+
+      const factorBars = Object.entries(ev.scores_1_to_10).map(([key, val]) => {
+        const meta = factorMeta[key] || { name: key, weight: 1 };
+        const color = val >= 8 ? 'var(--primary)' : (val >= 6 ? 'var(--accent)' : 'var(--danger)');
+        return `
+          <div class="score-item">
+            <div class="score-item-header">
+              <span class="score-item-name">${meta.name} <small style="color:var(--text-muted);">(x${meta.weight})</small></span>
+              <span class="score-item-val">${val.toFixed(1)}/10</span>
+            </div>
+            <div class="progress-bg">
+              <div class="progress-fill" style="width:${val * 10}%; background:${color};"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      const auditRows = Object.entries(ev.scores_1_to_10).map(([key, val]) => {
+        const meta = factorMeta[key] || { name: key, weight: 1 };
+        const au = auditMap[key] || {};
+        const isNeutral = au.status === 'no_especificado';
+        const statusBadge = isNeutral
+          ? `<span class="status-neutro">Neutro (No especificado)</span>`
+          : `<span class="status-verificado">Verificado</span>`;
+        return `
+          <tr>
+            <td><strong>${meta.name}</strong><br/><span style="color:var(--text-muted);font-size:0.72rem;">Peso: x${meta.weight}</span></td>
+            <td style="font-weight:700; font-size:0.9rem; color:var(--primary);">${val.toFixed(1)} / 10</td>
+            <td>${statusBadge}</td>
+            <td>${au.source || '-'}</td>
+            <td><code style="font-size:0.73rem; color:var(--primary); background:var(--primary-soft); padding:2px 6px; border-radius:4px;">${au.formula || '-'}</code><br/><span style="color:var(--text-muted); font-size:0.74rem;">${au.detail || ''}</span></td>
+          </tr>
+        `;
+      }).join('');
+
+      const floorDisplay = (p.floor !== null && p.floor !== undefined) ? `${p.floor}ª planta` : 'No especificada en anuncio';
+      const parkDisplay = ev.nearest_park_m !== null && ev.nearest_park_m !== undefined
+        ? `${ev.nearest_park_m} m (${ev.nearest_park_name})`
+        : 'Sin coordenadas GPS exactas en portal';
+      const tramDisplay = ev.nearest_tram_m !== null && ev.nearest_tram_m !== undefined
+        ? `${ev.nearest_tram_m} m (${ev.nearest_tram_name})`
+        : 'Sin coordenadas GPS exactas en portal';
+
+      document.getElementById('property-detail-content').innerHTML = `
+        <div class="detail-hero">
+          <div class="detail-hero-grid">
+            <!-- GALERÍA GRANDE -->
+            <div class="detail-gallery">
+              <div class="detail-main-photo">
+                ${currentPhotoUrl ? `<img id="detail-main-img" src="${currentPhotoUrl}" alt="${p.title}" />` : ''}
+                <div class="card-top-overlay">
+                  <div class="rank-chip">
+                    <span>${p.portal} · ID ${p.id}</span>
+                    <span class="zone-pill-mini z-${p.zone_tier}">Zona ${p.zone_tier.toUpperCase()}</span>
+                  </div>
+                  <div class="score-floating ${scoreClass}">
+                    ${p.total_points.toFixed(1)}<small>pts</small>
+                  </div>
+                </div>
+                ${photos.length > 1 ? `
+                  <div class="photo-mini-nav">
+                    <button onclick="selectDetailPhoto('${p.id}', (${ PHOTO_INDEX_MAP[p.id] || 0 } - 1 + ${photos.length}) % ${photos.length}); renderPropertyDetailPage('${p.id}');">Anterior</button>
+                    <span id="detail-img-count">${curPhotoIdx + 1} / ${photos.length}</span>
+                    <button onclick="selectDetailPhoto('${p.id}', (${ PHOTO_INDEX_MAP[p.id] || 0 } + 1) % ${photos.length}); renderPropertyDetailPage('${p.id}');">Siguiente</button>
+                  </div>
+                ` : ''}
+              </div>
+              ${photos.length > 1 ? `
+                <div class="detail-thumbs">
+                  ${photos.map((u, i) => `
+                    <img src="${proxiedImg(u)}" class="detail-thumb-item ${i === curPhotoIdx ? 'active' : ''}" onclick="selectDetailPhoto('${p.id}', ${i})" alt="Miniatura ${i+1}" />
+                  `).join('')}
+                </div>
+              ` : ''}
+            </div>
+
+            <!-- RESUMEN EJECUTIVO Y FINANCIERO -->
+            <div class="detail-summary-pane">
+              <div>
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap;">
+                  <div>
+                    <span class="zone-pill-mini z-${p.zone_tier}">Barrio ${p.neighborhood} · Grupo ${p.zone_tier.toUpperCase()}</span>
+                    <h2 style="font-size:1.3rem; font-weight:700; margin-top:8px; line-height:1.3; color:var(--text);">${p.title}</h2>
+                    <p style="color:var(--text-muted); font-size:0.86rem; margin-top:4px;">${p.street} · Anunciante: <strong style="color:var(--text);">${p.seller_name}</strong></p>
+                  </div>
+                </div>
+
+                <div style="display:flex; align-items:baseline; justify-content:space-between; margin:18px 0 14px; padding:14px 16px; background:var(--primary-soft); border-radius:6px; border:1px solid var(--primary-border);">
+                  <div>
+                    <div style="font-size:0.7rem; text-transform:uppercase; color:var(--primary); font-weight:700; letter-spacing:0.04em;">Precio Base de Venta</div>
+                    <div style="font-size:1.75rem; font-weight:800; color:var(--primary);">${fmtEur(p.price)}</div>
+                    <div style="font-size:0.78rem; color:var(--text-secondary);">${fmtEur(ev.price_per_sqm)}/m² construidos</div>
+                  </div>
+                  <div style="text-align:right;">
+                    <div style="font-size:0.7rem; text-transform:uppercase; color:var(--primary); font-weight:700; letter-spacing:0.04em;">Cuota Hipoteca (90% LTV)</div>
+                    <div style="font-size:1.35rem; font-weight:700; color:${fin.fits_700_rule ? 'var(--success)' : 'var(--warning)'};">
+                      ${fmtEur(fin.monthly_quota_90_eur)}/mes
+                    </div>
+                    <div style="font-size:0.75rem; color:var(--text-secondary);">Base 1-10: ${p.score_100.toFixed(1)} · Bonos/Agencia: ${ev.bonus_points >= 0 ? '+' : ''}${ev.bonus_points}</div>
+                  </div>
+                </div>
+
+                <div class="detail-fin-box">
+                  <div style="font-size:0.74rem; font-weight:700; text-transform:uppercase; color:var(--primary); margin-bottom:6px; letter-spacing:0.04em;">
+                    Desglose Financiero Total en Aragón (${fin.reform_type})
+                  </div>
+                  <div class="detail-fin-row">
+                    <span style="color:var(--text-muted);">Precio del inmueble:</span>
+                    <strong>${fmtEur(p.price)}</strong>
+                  </div>
+                  <div class="detail-fin-row">
+                    <span style="color:var(--text-muted);">ITP Aragón (${fin.itp_pct}%) + Notaría, Registro y Tasación:</span>
+                    <strong>${fmtEur(fin.itp_and_notary_eur)}</strong>
+                  </div>
+                  <div class="detail-fin-row">
+                    <span style="color:var(--text-muted);">Comisión de Agencia estimada (${p.is_agency ? (p.buyer_fee_exempt ? 'Exento comprador' : '3% + IVA') : 'Particular 0 €'}):</span>
+                    <strong style="color:${fin.agency_fee_eur > 0 ? 'var(--danger)' : 'var(--success)'};">${fmtEur(fin.agency_fee_eur)}</strong>
+                  </div>
+                  <div class="detail-fin-row">
+                    <span style="color:var(--text-muted);">Reforma estimada (Ventanas ${fmtEur(fin.reform_breakdown.windows_insulation_eur)} · Cocina ${fmtEur(fin.reform_breakdown.kitchen_eur)} · Baño ${fmtEur(fin.reform_breakdown.bathroom_eur)}):</span>
+                    <strong>${fmtEur(fin.estimated_reform_eur)}</strong>
+                  </div>
+                  <div class="detail-fin-row" style="border-top:1px solid var(--border); margin-top:4px; padding-top:8px;">
+                    <span style="font-weight:700; color:var(--text);">Inversión Total Llave en Mano:</span>
+                    <strong style="font-size:0.98rem; color:var(--primary);">${fmtEur(fin.total_investment_eur)}</strong>
+                  </div>
+                  <div class="detail-fin-row">
+                    <span style="color:var(--text-muted);">Valor de mercado estimado post-reforma en ${p.neighborhood}:</span>
+                    <strong style="color:${fin.net_equity_gain_eur >= 0 ? 'var(--success)' : 'var(--danger)'};">
+                      ${fmtEur(fin.reformed_market_value_eur)} (${fin.net_equity_gain_eur >= 0 ? '+' : ''}${fmtEur(fin.net_equity_gain_eur)} plusvalía)
+                    </strong>
+                  </div>
+                </div>
+              </div>
+
+              <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; padding-top:8px; border-top:1px solid var(--border);">
+                <select onchange="updatePropertyStatus('${p.id}', this.value)" style="padding:8px 12px; font-weight:600;">
+                  <option value="nuevo" ${p.user_status === 'nuevo' ? 'selected' : ''}>Estado: Nuevo</option>
+                  <option value="favorito" ${p.user_status === 'favorito' ? 'selected' : ''}>Favorito</option>
+                  <option value="contactar" ${p.user_status === 'contactar' ? 'selected' : ''}>Contactar / Visitar</option>
+                  <option value="visitado" ${p.user_status === 'visitado' ? 'selected' : ''}>Visitado</option>
+                  <option value="descartado" ${p.user_status === 'descartado' ? 'selected' : ''}>Descartado</option>
+                </select>
+                <a href="${p.url}" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
+                  Abrir anuncio original en ${p.portal}
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- FICHA TÉCNICA EN LISTA VERTICAL CON FINAS LÍNEAS + DESCRIPCIÓN Y NOTAS -->
+        <div class="detail-sections-grid">
+          <div class="detail-panel">
+            <h3>Ficha Técnica del Inmueble</h3>
+            <div class="vertical-spec-list">
+              <div class="vertical-spec-row">
+                <span class="vertical-spec-label">Superficie construida</span>
+                <span class="vertical-spec-value">${p.sqm} m²</span>
+              </div>
+              <div class="vertical-spec-row">
+                <span class="vertical-spec-label">Precio base de venta</span>
+                <span class="vertical-spec-value">${fmtEur(p.price)}</span>
+              </div>
+              <div class="vertical-spec-row">
+                <span class="vertical-spec-label">Precio por metro cuadrado</span>
+                <span class="vertical-spec-value">${fmtEur(ev.price_per_sqm)} / m²</span>
+              </div>
+              <div class="vertical-spec-row">
+                <span class="vertical-spec-label">Dormitorios</span>
+                <span class="vertical-spec-value">${p.bedrooms} habitaciones</span>
+              </div>
+              <div class="vertical-spec-row">
+                <span class="vertical-spec-label">Baños</span>
+                <span class="vertical-spec-value">${p.bathrooms} baño(s)</span>
+              </div>
+              <div class="vertical-spec-row">
+                <span class="vertical-spec-label">Planta / Altura</span>
+                <span class="vertical-spec-value">${floorDisplay}</span>
+              </div>
+              <div class="vertical-spec-row">
+                <span class="vertical-spec-label">Ascensor en finca</span>
+                <span class="vertical-spec-value">${p.has_elevator ? 'Sí dispone de ascensor' : 'Sin ascensor'}</span>
+              </div>
+              <div class="vertical-spec-row">
+                <span class="vertical-spec-label">Terraza o balcón exterior</span>
+                <span class="vertical-spec-value">${p.has_terrace ? 'Sí dispone de terraza/balcón' : 'No especificado'}</span>
+              </div>
+              <div class="vertical-spec-row">
+                <span class="vertical-spec-label">Garaje y Trastero</span>
+                <span class="vertical-spec-value">Garaje: ${p.has_garage ? 'Sí (+20 pts)' : 'No'} · Trastero: ${p.has_storage ? 'Sí (+8 pts)' : 'No'}</span>
+              </div>
+              <div class="vertical-spec-row">
+                <span class="vertical-spec-label">Orientación declarada</span>
+                <span class="vertical-spec-value">${p.orientation}</span>
+              </div>
+              <div class="vertical-spec-row">
+                <span class="vertical-spec-label">Sistema de calefacción</span>
+                <span class="vertical-spec-value">${p.heating_type}</span>
+              </div>
+              <div class="vertical-spec-row">
+                <span class="vertical-spec-label">Gastos de comunidad</span>
+                <span class="vertical-spec-value">${p.community_eur ? `${p.community_eur} €/mes` : 'No especificado en anuncio'}</span>
+              </div>
+              <div class="vertical-spec-row">
+                <span class="vertical-spec-label">Año de construcción</span>
+                <span class="vertical-spec-value">${p.year_built || 'No especificado en anuncio'}</span>
+              </div>
+              <div class="vertical-spec-row">
+                <span class="vertical-spec-label">Tipo de anunciante</span>
+                <span class="vertical-spec-value">${p.is_agency ? `Agencia (${p.seller_name})` : `Particular (${p.seller_name})`}</span>
+              </div>
+              <div class="vertical-spec-row">
+                <span class="vertical-spec-label">Barrio y grupo multiplicador</span>
+                <span class="vertical-spec-value">${p.neighborhood} (Grupo ${p.zone_tier.toUpperCase()})</span>
+              </div>
+              <div class="vertical-spec-row">
+                <span class="vertical-spec-label">Distancia GPS a parque más cercano</span>
+                <span class="vertical-spec-value">${parkDisplay}</span>
+              </div>
+              <div class="vertical-spec-row">
+                <span class="vertical-spec-label">Distancia GPS a parada de Tranvía L1</span>
+                <span class="vertical-spec-value">${tramDisplay}</span>
+              </div>
+              <div class="vertical-spec-row">
+                <span class="vertical-spec-label">Portal inmobiliario y referencia</span>
+                <span class="vertical-spec-value">${p.portal} (${p.id})</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="detail-panel" style="display:flex; flex-direction:column; justify-content:space-between; gap:18px;">
+            <div>
+              <h3>Descripción Original del Anuncio y Etiquetas</h3>
+              <div class="badge-list" style="margin-bottom:12px;">
+                ${ev.badges.map(b => `<span class="badge">${b}</span>`).join('')}
+                ${ev.alerts.map(a => `<span class="badge badge-alert">${a}</span>`).join('')}
+              </div>
+              <p style="font-size:0.84rem; color:var(--text-secondary); line-height:1.65; max-height:250px; overflow-y:auto; padding:12px 14px; background:var(--bg-subtle); border-radius:6px; border:1px solid var(--border-subtle);">
+                ${p.description || 'Sin texto descriptivo adicional en el portal.'}
+              </p>
+            </div>
+
+            <div>
+              <label style="font-size:0.74rem; color:var(--text-muted); font-weight:600; text-transform:uppercase; display:block; margin-bottom:6px;">
+                Notas personales sobre esta vivienda (se guardan automáticamente)
+              </label>
+              <input type="text" value="${(p.user_notes || '').replace(/"/g, '&quot;')}" placeholder="Escribe aquí tus notas de llamada, visita, gastos reales..."
+                onblur="updatePropertyNotes('${p.id}', this.value)" style="width:100%;" />
+            </div>
+          </div>
+        </div>
+
+        <!-- RESUMEN VISUAL DE LAS 13 DIMENSIONES -->
+        <div class="detail-panel" style="margin-bottom:22px;">
+          <h3>Desglose de los 13 Factores Ponderados (Escala 1 a 10)</h3>
+          <div class="scores-grid">
+            ${factorBars}
+          </div>
+        </div>
+
+        <!-- TABLA DE AUDITORÍA MATEMÁTICA COMPLETA -->
+        <div class="detail-panel">
+          <h3>Auditoría Matemática y Evidencia Verificable de Puntuación</h3>
+          <p style="font-size:0.81rem; color:var(--text-muted); margin-bottom:14px;">
+            Cada factor se calcula a partir de datos verificables del anuncio, coordenadas GPS (fórmula geodésica Haversine) o luminosidad de píxeles de la imagen. Si un atributo no consta en el anuncio, se asigna puntuación neutra sin inventar datos.
+          </p>
+          <div style="overflow-x:auto;">
+            <table class="audit-table">
+              <thead>
+                <tr>
+                  <th style="width:22%;">Factor y Peso</th>
+                  <th style="width:10%;">Nota</th>
+                  <th style="width:14%;">Estado del Dato</th>
+                  <th style="width:24%;">Dato Extraído del Anuncio</th>
+                  <th style="width:30%;">Fórmula Aplicada y Detalle</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${auditRows}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderWeightsSliders() {
+      const factors = APP_STATE.profile.scoring_factors_1_to_10;
+      const bonuses = APP_STATE.profile.fixed_bonuses;
+      const zm = APP_STATE.profile.zone_multipliers || {};
+
+      // 1. Renderizar Selector de Zonas por Barrio
+      const allNeighborhoods = [];
+      ['x4', 'x3', 'x2', 'x1'].forEach(tierKey => {
+        const list = (zm[tierKey] && zm[tierKey].neighborhoods) || [];
+        list.forEach(nb => {
+          // Evitar duplicar alias internos de Venecia en la vista de selectores
+          if (nb === 'Venecia') return;
+          allNeighborhoods.push({ name: nb, tier: tierKey });
+        });
+      });
+
+      allNeighborhoods.sort((a, b) => a.name.localeCompare(b.name, 'es'));
+
+      document.getElementById('zone-selectors-container').innerHTML = allNeighborhoods.map(item => `
+        <div class="zone-selector-item">
+          <span class="zone-selector-name">${item.name}</span>
+          <select data-zone-nb="${item.name}">
+            <option value="x4" ${item.tier === 'x4' ? 'selected' : ''}>Grupo x4 (10.0 pts)</option>
+            <option value="x3" ${item.tier === 'x3' ? 'selected' : ''}>Grupo x3 (7.8 pts)</option>
+            <option value="x2" ${item.tier === 'x2' ? 'selected' : ''}>Grupo x2 (5.5 pts)</option>
+            <option value="x1" ${item.tier === 'x1' ? 'selected' : ''}>Grupo x1 (3.5 pts)</option>
+          </select>
+        </div>
+      `).join('');
+
+      // 2. Renderizar Sliders de Pesos
+      document.getElementById('weights-sliders-container').innerHTML = Object.entries(factors).map(([key, meta]) => `
+        <div class="weight-control">
+          <div class="weight-control-top">
+            <label>${meta.name}</label>
+            <span class="weight-val-badge" id="w-badge-${key}">x${meta.weight}</span>
+          </div>
+          <div class="weight-desc">${meta.description}</div>
+          <input type="range" min="0" max="10" step="0.5" value="${meta.weight}"
+            data-weight-key="${key}"
+            oninput="document.getElementById('w-badge-${key}').textContent = 'x' + this.value" />
+        </div>
+      `).join('');
+
+      // 3. Renderizar Sliders de Bonos y Penalizaciones
+      const bonusLabels = {
+        garage_points: 'Puntos extra por Plaza de Garaje',
+        storage_room_points: 'Puntos extra por Trastero',
+        penthouse_solarium_points: 'Puntos extra por Ático / Solárium',
+        agency_penalty_points: 'Penalización por Agencia con comisión (negativo)',
+        agency_no_fee_penalty_points: 'Penalización por Agencia sin comisión comprador (negativo)'
+      };
+
+      document.getElementById('bonuses-sliders-container').innerHTML = Object.entries(bonuses).map(([bk, bval]) => {
+        const isNeg = bk.includes('agency');
+        const minVal = isNeg ? -40 : 0;
+        const maxVal = isNeg ? 0 : 35;
+        return `
+          <div class="weight-control">
+            <div class="weight-control-top">
+              <label>${bonusLabels[bk] || bk}</label>
+              <span class="weight-val-badge" id="b-badge-${bk}">${bval >= 0 ? '+' : ''}${bval} pts</span>
+            </div>
+            <input type="range" min="${minVal}" max="${maxVal}" step="1" value="${bval}"
+              data-bonus-key="${bk}"
+              oninput="document.getElementById('b-badge-${bk}').textContent = (this.value >= 0 ? '+' : '') + this.value + ' pts'" />
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function saveWeights() {
+      const weights = {};
+      document.querySelectorAll('[data-weight-key]').forEach(el => {
+        weights[el.getAttribute('data-weight-key')] = parseFloat(el.value);
+      });
+      const bonuses = {};
+      document.querySelectorAll('[data-bonus-key]').forEach(el => {
+        bonuses[el.getAttribute('data-bonus-key')] = parseFloat(el.value);
+      });
+      const zone_assignments = {};
+      document.querySelectorAll('[data-zone-nb]').forEach(el => {
+        zone_assignments[el.getAttribute('data-zone-nb')] = el.value;
+      });
+
+      const res = await fetch('/api/weights', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ weights, bonuses, zone_assignments })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        APP_STATE = data.state;
+        renderAll();
+        showToast('Configuración de zonas y pesos guardada. Ranking recalculado.');
+      }
+    }
+
+    function renderNeighborhoodsRef() {
+      const ref = APP_STATE.neighborhoods_ref;
+      const zm = APP_STATE.profile.zone_multipliers;
+      const groups = ['x4', 'x3', 'x2', 'x1'];
+
+      document.getElementById('neighborhoods-grid').innerHTML = groups.map(g => {
+        const gdata = zm[g];
+        const rows = gdata.neighborhoods.filter(nb => nb !== 'Venecia').map(nb => {
+          const r = ref[nb] || { avg_sqm_eur: 1850, reformed_sqm_eur: 2150 };
+          return `
+            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-subtle);font-size:0.82rem;">
+              <span style="font-weight:600; color:var(--text);">${nb}</span>
+              <span style="color:var(--text-muted);">Media: <strong>${r.avg_sqm_eur} €/m²</strong> · Reformado: <strong style="color:var(--primary);">${r.reformed_sqm_eur} €/m²</strong></span>
+            </div>
+          `;
+        }).join('');
+
+        return `
+          <div class="detail-panel">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border);">
+              <span class="zone-pill-mini z-${g}" style="font-size:0.78rem; padding:4px 10px;">${gdata.label}</span>
+              <span style="font-weight:700;font-size:0.84rem;color:var(--primary);">Nota Base: ${gdata.base_score_10}/10</span>
+            </div>
+            <div>${rows}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderGuide() {
+      const md = APP_STATE.guide_markdown || '';
+      let html = md
+        .replace(/^### (.*$)/gim, '<h3 style="margin-top:16px;color:var(--text);">$1</h3>')
+        .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+        .replace(/^# (.*$)/gim, '<h1 style="margin-bottom:12px;color:var(--primary);">$1</h1>')
+        .replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
+        .replace(/^\* (.*$)/gim, '<li>$1</li>')
+        .replace(/^[0-9]+\. (.*$)/gim, '<li>$1</li>')
+        .replace(/\n\n/gim, '<br/><br/>');
+      document.getElementById('guide-content').innerHTML = html;
+    }
+
+    async function updatePropertyStatus(id, status) {
+      const prop = APP_STATE.properties.find(x => x.id === id);
+      const res = await fetch('/api/property/status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, user_status: status, user_notes: prop ? prop.user_notes : '' })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        APP_STATE = data.state;
+        renderKPIs();
+        renderProperties();
+        showToast(`Estado actualizado a: ${status.toUpperCase()}`);
+      }
+    }
+
+    async function updatePropertyNotes(id, notes) {
+      const prop = APP_STATE.properties.find(x => x.id === id);
+      if (!prop || prop.user_notes === notes) return;
+      const res = await fetch('/api/property/status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, user_status: prop.user_status, user_notes: notes })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        APP_STATE = data.state;
+        showToast('Nota guardada en la base de datos.');
+      }
+    }
+
+    async function triggerDailyScan() {
+      const btn = document.getElementById('btn-scan');
+      btn.textContent = 'Actualizando portales...';
+      btn.disabled = true;
+      try {
+        const res = await fetch('/api/scan', { method: 'POST', body: '{}' });
+        const data = await res.json();
+        if (data.ok) {
+          APP_STATE = data.state;
+          renderAll();
+          showToast(`Escaneo completado: ${data.scan_stats.total_processed} viviendas procesadas.`);
+        }
+      } finally {
+        btn.textContent = 'Actualizar portales';
+        btn.disabled = false;
+      }
+    }
+
+    function switchTab(tabName, btnEl) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+      document.getElementById(`tab-${tabName}`).classList.add('active');
+      btnEl.classList.add('active');
+    }
+
+    function toggleMap() {
+      const mc = document.getElementById('map-container');
+      mc.classList.toggle('visible');
+      if (mc.classList.contains('visible')) {
+        if (!MAP_INSTANCE) {
+          MAP_INSTANCE = L.map('map-container').setView([41.6488, -0.8891], 13);
+          L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; OpenStreetMap &copy; CARTO'
+          }).addTo(MAP_INSTANCE);
+        }
+        setTimeout(() => {
+          MAP_INSTANCE.invalidateSize();
+          renderProperties();
+        }, 150);
+      }
+    }
+
+    function updateMapMarkers(props) {
+      if (!MAP_INSTANCE) return;
+      MAP_MARKERS.forEach(m => MAP_INSTANCE.removeLayer(m));
+      MAP_MARKERS = [];
+      props.forEach((p, idx) => {
+        if (!p.lat || !p.lon) return;
+        const color = !p.is_agency ? '#1E6F5C' : (p.total_points >= 78 ? '#2B5B84' : '#9A6700');
+        const marker = L.circleMarker([p.lat, p.lon], {
+          radius: 8,
+          fillColor: color,
+          color: '#FFFFFF',
+          weight: 2,
+          fillOpacity: 0.9
+        }).addTo(MAP_INSTANCE);
+        marker.bindPopup(`
+          <div style="font-family:sans-serif; min-width:210px; color:#1E293B;">
+            <strong>#${idx + 1} · ${p.neighborhood} (${p.portal})</strong><br/>
+            <span>${p.is_agency ? 'Agencia: ' + p.seller_name : 'Particular (0 € comisión)'}</span><br/>
+            <span style="color:#2B5B84;font-weight:700;">${fmtEur(p.price)}</span> (${p.sqm} m² · ${p.bedrooms} hab)<br/>
+            <span>Puntuación: <strong>${p.total_points.toFixed(1)} pts</strong></span><br/>
+            <a href="#/piso/${encodeURIComponent(p.id)}" style="color:#2B5B84;font-weight:600;">Abrir ficha interna</a>
+          </div>
+        `);
+        MAP_MARKERS.push(marker);
+      });
+    }
+
+    function openAddModal() {
+      document.getElementById('add-modal').classList.add('open');
+    }
+    function closeAddModal() {
+      document.getElementById('add-modal').classList.remove('open');
+    }
+
+    async function submitNewProperty() {
+      const payload = {
+        title: document.getElementById('m-title').value,
+        neighborhood: document.getElementById('m-neighborhood').value,
+        street: document.getElementById('m-street').value,
+        price: parseFloat(document.getElementById('m-price').value),
+        sqm: parseFloat(document.getElementById('m-sqm').value),
+        bedrooms: parseInt(document.getElementById('m-bedrooms').value),
+        floor: parseInt(document.getElementById('m-floor').value),
+        is_agency: document.getElementById('m-agency').value === 'true',
+        seller_name: document.getElementById('m-seller-name').value,
+        portal: document.getElementById('m-portal').value,
+        url: document.getElementById('m-url').value,
+        photo_url: document.getElementById('m-photo').value,
+        has_elevator: document.getElementById('m-elev').checked,
+        has_terrace: document.getElementById('m-terr').checked,
+        has_garage: document.getElementById('m-gar').checked,
+        has_storage: document.getElementById('m-stor').checked,
+        description: document.getElementById('m-desc').value
+      };
+
+      const res = await fetch('/api/property/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.ok) {
+        APP_STATE = data.state;
+        closeAddModal();
+        renderAll();
+        showToast('Inmueble evaluado e incorporado al catálogo.');
+      }
+    }
+
+    loadState();
+  </script>
+</body>
+</html>

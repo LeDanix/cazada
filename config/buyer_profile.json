@@ -1,0 +1,185 @@
+{
+  "profile_name": "Comprador Joven Zaragoza (<35 años) - Eficiencia & Reforma Inteligente",
+  "updated_at": "2026-10-19",
+  "financials": {
+    "age_under_35": true,
+    "net_monthly_income_eur": 2100,
+    "max_debt_ratio": 0.3333,
+    "max_monthly_mortgage_eur": 700,
+    "available_savings_min_eur": 30000,
+    "available_savings_max_eur": 60000,
+    "target_price_min_eur": 95000,
+    "target_price_max_eur": 200000,
+    "sweet_spot_reform_price_max_eur": 135000,
+    "mortgage_years": 30,
+    "estimated_interest_rate_tin": 2.75,
+    "default_ltv_pct": 90,
+    "aragon_itp_general_pct": 8.0,
+    "aragon_itp_young_under_100k_pct": 7.0,
+    "notary_registry_appraisal_eur": 2200
+  },
+  "strategy": {
+    "primary": "Comprar barato (< 135.000 €) con buena estructura/planta/luz e invertir en reforma de eficiencia energética (ventanas Climalit/PVC, aislamiento), baño y cocina (y salón/habitaciones si sobra), siempre que el coste total final sea claramente inferior al de un piso ya reformado.",
+    "secondary": "Pisos entre 135.000 € y 195.000 € que solo requieran reforma estética leve si la relación calidad/zona/precio compensa."
+  },
+  "hard_and_soft_requirements": {
+    "min_bedrooms": 3,
+    "bedrooms_detail": "1 dormitorio principal + al menos 2 habitaciones amplias y luminosas aptas para despacho/teletrabajo o invitados",
+    "min_sqm_strict": 60,
+    "min_sqm_ideal": 70,
+    "min_floor": 2,
+    "elevator_required": true,
+    "elevator_reason": "Evitar derramas futuras de instalación de ascensor y mejorar accesibilidad/reventa",
+    "terrace_required": true,
+    "terrace_green_view_bonus": true,
+    "natural_light_required": true,
+    "cross_ventilation_preferred": true,
+    "preferred_orientations": ["Sur", "Sureste", "Este"],
+    "preferred_heating": "Central (con contador individual o comunidad contenida)",
+    "discard_occupied_or_uninhabitable": true,
+    "allow_auctions_if_visitable_or_documented": true
+  },
+  "zone_multipliers": {
+    "x4": {
+      "multiplier": 4.0,
+      "base_score_10": 10.0,
+      "label": "Zonas Muy Buenas (x4)",
+      "neighborhoods": [
+        "Actur",
+        "Universidad",
+        "Fernando El Católico",
+        "Plaza Roma",
+        "Hernán Cortés",
+        "Romareda",
+        "Ruiseñores"
+      ]
+    },
+    "x3": {
+      "multiplier": 3.0,
+      "base_score_10": 7.8,
+      "label": "Zonas Media-Buena (x3)",
+      "neighborhoods": [
+        "La Almozara",
+        "Almozara",
+        "Casablanca",
+        "Universitas",
+        "Los Enlaces",
+        "Independencia",
+        "Centro",
+        "Magdalena",
+        "Rebolería",
+        "Sagasta"
+      ]
+    },
+    "x2": {
+      "multiplier": 2.0,
+      "base_score_10": 5.5,
+      "label": "Zonas Medias (x2)",
+      "neighborhoods": [
+        "Pinares de Venecia",
+        "Parque Venecia",
+        "Venecia",
+        "Arrabal",
+        "Barrio Jesús",
+        "Santa Isabel",
+        "Parque Goya",
+        "Valdespartera",
+        "Rosales del Canal",
+        "Miralbueno",
+        "Montecanal",
+        "San José",
+        "Miraflores"
+      ]
+    },
+    "x1": {
+      "multiplier": 1.0,
+      "base_score_10": 3.5,
+      "label": "Zonas Bajas (x1)",
+      "neighborhoods": [
+        "La Paz",
+        "Delicias",
+        "Las Fuentes",
+        "El Gancho",
+        "San Pablo",
+        "Arcosur",
+        "Valdefierro",
+        "Oliver",
+        "Torrero"
+      ]
+    }
+  },
+  "scoring_factors_1_to_10": {
+    "price_and_total_roi": {
+      "name": "Precio y Rentabilidad Post-Reforma",
+      "weight": 4.5,
+      "description": "Descuento €/m² respecto a su barrio y ahorro del Coste Total (Compra + Reforma) frente a pisos ya reformados. Premia pisos <135.000€ con alto margen de mejora."
+    },
+    "neighborhood_tier": {
+      "name": "Localización por Barrio (Grupos x4/x3/x2/x1)",
+      "weight": 4.0,
+      "description": "Puntuación según la clasificación de barrios definida en tu perfil."
+    },
+    "street_microlocation": {
+      "name": "Micro-localización por Calle",
+      "weight": 3.2,
+      "description": "Calidad específica de la calle/tramo dentro del barrio (ej. avenidas principales, cercanía a zonas mejores, entorno consolidado)."
+    },
+    "size_and_layout": {
+      "name": "Superficie (>70m²) y Aprovechamiento de Planta",
+      "weight": 3.5,
+      "description": "Superficie útil (>60m² mínimo, >70m² ideal), salón y cocina amplios, bajo porcentaje de pasillo perdido y facilidad para unir espacios sin muros de carga."
+    },
+    "secondary_rooms_quality": {
+      "name": "Calidad de Habitaciones Secundarias (Despachos/Invitados)",
+      "weight": 3.0,
+      "description": "Al menos 3 habitaciones reales donde las 2 secundarias sean luminosas y amplias para teletrabajar cómodamente."
+    },
+    "light_orientation_views": {
+      "name": "Luz Natural, Orientación (S/SE/E), Ventilación e Independencia Visual",
+      "weight": 3.5,
+      "description": "Piso exterior (>=2ª planta), orientación Sur/Sureste/Este, ventilación cruzada exterior-patio y distancia amplia al edificio de enfrente."
+    },
+    "terrace_and_green_areas": {
+      "name": "Terraza y Vistas a Zona Verde",
+      "weight": 3.0,
+      "description": "Presencia de terraza usable y puntuación extra si tiene vistas despejadas a parque o arbolado."
+    },
+    "condition_and_reform_viability": {
+      "name": "Estado Interior y Viabilidad de Reforma (Cocina/Baño/Eficiencia)",
+      "weight": 2.8,
+      "description": "Relación entre el estado actual y el coste estimado de sanitizar baños/cocina y mejorar eficiencia."
+    },
+    "insulation_and_hidden_installations": {
+      "name": "Aislamiento Actual (Ventanas/Cierzo) e Instalaciones Ocultas",
+      "weight": 2.5,
+      "description": "Estado de carpintería exterior (Climalit/PVC vs aluminio viejo) y estado de electricidad/fontanería/radiadores."
+    },
+    "running_costs_and_heating": {
+      "name": "Costes Asociados (Comunidad, IBI, Luz/Gas) y Calefacción Central",
+      "weight": 2.5,
+      "description": "Gastos de comunidad contenidos en relación a servicios, priorizando calefacción central eficiente."
+    },
+    "building_health_and_neighbors": {
+      "name": "Salud de la Finca (Ascensor, Cota Cero, ITE) y Nº de Vecinos",
+      "weight": 2.8,
+      "description": "Ascensor instalado, portal sin barreras arquitectónicas, fachada/tejado en buen estado y comunidad amplia (15-30+ vecinos) para diluir derramas."
+    },
+    "noise_and_tranquility": {
+      "name": "Nivel de Silencio y Tranquilidad",
+      "weight": 2.2,
+      "description": "Ausencia de bares ruidosos en los bajos o tráfico pesado nocturno."
+    },
+    "mobility_and_parking": {
+      "name": "Carril Bici, Tranvía/Bus y Aparcamiento en Calle",
+      "weight": 2.5,
+      "description": "Proximidad a red de carril bici de Zaragoza, paradas de tranvía/bus y facilidad para aparcar o alquilar plaza si no tiene garaje."
+    }
+  },
+  "fixed_bonuses": {
+    "garage_points": 20.0,
+    "storage_room_points": 8.0,
+    "penthouse_solarium_points": 10.0,
+    "agency_penalty_points": -15.0,
+    "agency_no_fee_penalty_points": -5.0
+  }
+}
