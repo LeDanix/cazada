@@ -816,6 +816,7 @@ def score_listing(listing: Dict[str, Any], profile: Optional[Dict[str, Any]] = N
             "storage_room_points": bonus_storage,
             "penthouse_solarium_points": bonus_penthouse,
             "agency_penalty_points": agency_modifier,
+            "zone_direct_impact": zone_direct_impact,
             "structural_penalty": structural_penalty,
             "total_bonuses": total_bonuses,
         },
@@ -836,6 +837,7 @@ def score_listing(listing: Dict[str, Any], profile: Optional[Dict[str, Any]] = N
         "zone_info": {
             "tier": tier_key,
             "multiplier": zone_mult,
+            "zone_score_10": s_zone,
             "matched_neighborhood": matched_nb,
             "avg_zone_eur_sqm": avg_zone_sqm,
         },

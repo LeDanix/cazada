@@ -57,7 +57,7 @@ flowchart LR
 | **Motor de Puntuación y Finanzas** | **Python 3 (`math`, `re`, `json`)** | [`scripts/scoring_engine.py`](../scripts/scoring_engine.py) | Motor determinista y auditable: calcula distancias geodésicas GPS (fórmula de Haversine), costes de reforma por partida, hipoteca e ITP en Aragón, y los 13 factores con su evidencia exacta. |
 | **Scraper Multi-Portal e Imagen** | **Python 3 + Pillow (`PIL`)** | [`scripts/run_daily_scan.py`](../scripts/run_daily_scan.py) | Extrae anuncios reales de Fotocasa, Pisos.com, Tecnocasa y Redpiso con **caché incremental** en SQLite y mide la luminosidad real (`0-255`) de los píxeles de la foto principal sin gastar tokens de visión IA. |
 | **Frontend Web (SPA)** | **HTML5 + CSS3 + Vanilla JS (ES6+)** | [`static/index.html`](../static/index.html) | Interfaz editorial limpia sin elementos estridentes ni emojis, basada en una paleta **Pantone Azul Calmado (`#2B5B84`), Blancos Arquitectónicos (`#FFFFFF` / `#F4F7FA`) y Gris Pizarra (`#1E293B`)**, con vista principal (`#/`) y página interna por vivienda (`#/piso/<id>`). |
-| **Cartografía Interactiva** | **Leaflet.js + CartoDB Light** | [`static/index.html`](../static/index.html) | Mapa claro profesional con marcadores codificados por color según puntuación y tipo de vendedor. |
+| **Cartografía Interactiva** | **Leaflet.js + OpenStreetMap** | [`static/index.html`](../static/index.html) | Mapa interactivo de uso libre (`tile.openstreetmap.org`, sin API keys de pago) con estado activo en el botón superior, barra de cierre directo y marcadores codificados por color según puntuación y tipo de vendedor. |
 
 ---
 
@@ -134,22 +134,22 @@ Cada anuncio se clasifica determinísticamente cruzando:
 
 ---
 
-### 4.2. Los 13 Factores Ponderados (Escala 1 a 10) y Selector de Zonas (`x4`, `x3`, `x2`, `x1`)
+### 4.2. Los 13 Factores Ponderados (Escala 1 a 10) y Puntuación por Zonas (`10`, `7.8`, `5.5`, `3.5` pts)
 
 > [!IMPORTANT]
 > **Cero Datos Inventados (`status: no_especificado`)**:  
 > Cuando un anuncio no especifica un dato en su ficha ni en su descripción (por ejemplo, si no menciona el tipo de ventanas, ni la orientación, ni el sistema de calefacción o la cuota de comunidad), el motor asigna una **nota base neutra (`5,0/10` o `6,0/10`)** y lo etiqueta en la tabla de auditoría como **`Neutro (No especificado)`**.
 
-#### Grupos de Barrios Configurados (Editables mediante selector en la pestaña «Pesos y Selector de Zonas»)
-- **Grupo `x4` (Nota base `10.0/10`)**: Actur, Universidad, Fernando El Católico, Plaza Roma, Hernán Cortés, Romareda, Ruiseñores.
-- **Grupo `x3` (Nota base `7.8/10`)**: La Almozara, Casablanca, Universitas, Los Enlaces, Independencia, Centro, Magdalena, Rebolería, Sagasta.
-- **Grupo `x2` (Nota base `5.5/10`)**: **Pinares de Venecia**, **Parque Venecia**, Arrabal, Barrio Jesús, Santa Isabel, Parque Goya, Valdespartera, Rosales del Canal, Miralbueno, Montecanal, San José, Miraflores.
-- **Grupo `x1` (Nota base `3.5/10`)**: **La Paz**, Delicias, Las Fuentes, El Gancho, San Pablo, Arcosur, Valdefierro, Oliver, Torrero.
+#### Niveles de Puntuación por Barrio (Editables mediante selector en la pestaña «Pesos y Puntos de Zona»)
+- **Nivel `10 pts`**: Actur, Universidad, Fernando El Católico, Plaza Roma, Hernán Cortés, Romareda, Ruiseñores.
+- **Nivel `7.8 pts`**: La Almozara, Casablanca, Universitas, Los Enlaces, Independencia, Centro, Magdalena, Rebolería, Sagasta.
+- **Nivel `5.5 pts`**: **Pinares de Venecia**, **Parque Venecia**, Arrabal, Barrio Jesús, Santa Isabel, Parque Goya, Valdespartera, Rosales del Canal, Miralbueno, Montecanal, San José, Miraflores.
+- **Nivel `3.5 pts`**: **La Paz**, Delicias, Las Fuentes, El Gancho, San Pablo, Arcosur, Valdefierro, Oliver, Torrero.
 
 | # | Clave Técnica | Nombre del Factor | Peso Base | Qué mide y con qué evidencia real |
 | :-: | :--- | :--- | :-: | :--- |
 | 1 | `price_and_total_roi` | **Precio y Rentabilidad Post-Reforma** | **4.5** | Compara el coste total por $\text{m}^2$ (incluyendo reforma, impuestos y agencia) frente al precio medio reformado del barrio. Añade $+1,2$ si cumple la Estrategia A ($\le 135\text{k €}$) y resta $-2,0$ si la cuota supera $700\text{ €/mes}$. |
-| 2 | `neighborhood_tier` | **Localización por Barrio (`x4`/`x3`/`x2`/`x1`)** | **4.0** | Clasifica el barrio según la tabla de grupos de `buyer_profile.json` (`x4` = $10,0$; `x3` = $7,8$; `x2` = $5,5$; `x1` = $3,5$). |
+| 2 | `neighborhood_tier` | **Localización por Barrio (`10`/`7.8`/`5.5`/`3.5` pts)** | **6.0** | Clasifica el barrio según el nivel de puntos configurado en `buyer_profile.json` ($10,0$, $7,8$, $5,5$ o $3,5$ puntos) a partir del barrio, dirección, título y URL del anuncio. |
 | 3 | `street_microlocation` | **Micro-localización por Calle y Tranvía** | **3.2** | Si el anuncio tiene coordenadas GPS reales, mide la distancia Haversine en metros a la parada de **Tranvía L1** más cercana ($+0,8$ si $\le 450\text{ m}$) y al **Parque** más próximo ($+0,5$ si $\le 400\text{ m}$). |
 | 4 | `size_and_layout` | **Superficie ($>70\text{ m}^2$) y Aprovechamiento** | **3.5** | Curva progresiva por superficie construida ($70\text{--}105\text{ m}^2 \rightarrow 7,2\text{--}9,6$), bonificando $+0,6$ si menciona distribución cuadrada/sin pasillo y $+0,4$ si tiene $\ge 2$ baños. |
 | 5 | `secondary_rooms_quality` | **Calidad de Habitaciones Secundarias** | **3.0** | Mide el ratio $\text{m}^2/\text{habitación}$ para asegurar 1 dormitorio principal + 2 despachos/invitados amplios, más $+0,4$ si menciona armarios empotrados. |
@@ -164,21 +164,23 @@ Cada anuncio se clasifica determinísticamente cruzando:
 
 ---
 
-### 4.3. Bonificaciones Fijas y Penalizaciones Estructurales (`final_ranking_score`)
+### 4.3. Bonificaciones Fijas, Impacto de Zona y Deduplicación Multi-Portal (`final_ranking_score`)
 
-$$\text{Puntuación Final Ranking} = \text{Nota Base}_{100} + \text{Bonos Extras} + \text{Penalización Agencia} + \text{Penalizaciones Estructurales}$$
+$$\text{Puntuación Final Ranking} = \text{Nota Base}_{100} + \text{Impacto Directo Zona} + \text{Bonos Extras} + \text{Penalización Agencia} + \text{Penalizaciones Estructurales}$$
 
-- **Plaza de Garaje incluida**: **$+20,0\text{ pts}$**.
-- **Trastero incluido**: **$+8,0\text{ pts}$**.
-- **Ático / Solárium**: **$+10,0\text{ pts}$**.
+- **Impacto Directo del Nivel de Zona**: $(\text{Puntos Zona} - 6,0) \times 1,8\text{ pts}$ ($+7,2\text{ pts}$ en zonas de `10 pts`, $+3,2\text{ pts}$ en `7.8 pts`, $-0,9\text{ pts}$ en `5.5 pts`, $-4,5\text{ pts}$ en `3.5 pts`).
+- **Plaza de Garaje incluida**: **$+6,0\text{ pts}$**.
+- **Trastero incluido**: **$+3,0\text{ pts}$**.
+- **Ático / Solárium**: **$+5,0\text{ pts}$**.
 - **Penalización por Agencia Inmobiliaria**:
   - **Particular**: **$0,0\text{ pts}$**.
-  - **Agencia sin comisión al comprador (`buyer_fee_exempt`)**: **$-5,0\text{ pts}$**.
-  - **Agencia tradicional con honorarios**: **$-15,0\text{ pts}$**.
+  - **Agencia sin comisión al comprador (`buyer_fee_exempt`)**: **$-3,0\text{ pts}$**.
+  - **Agencia tradicional con honorarios**: **$-10,0\text{ pts}$**.
 - **Penalizaciones Estructurales de Salvaguarda**:
   - Sin ascensor: **$-25,0\text{ pts}$**.
   - Menos de 3 dormitorios: **$-18,0\text{ pts}$**.
   - Planta inferior a 2ª (Bajo o 1ª): **$-10,0\text{ pts}$**.
+- **Deduplicación Multi-Portal Automática**: Cuando un mismo inmueble está publicado simultáneamente en varios portales (por ejemplo Fotocasa y Pisos.com con el mismo precio, superficie $\pm 2\text{ m}^2$, dormitorios y barrio/agencia), el sistema los unifica en una única ficha combinando sus galerías fotográficas y enlaces.
 
 ---
 

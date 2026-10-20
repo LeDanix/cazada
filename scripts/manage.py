@@ -19,7 +19,7 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(BASE_DIR / "scripts"))
 
-from run_daily_scan import DB_PATH, run_scan  # noqa: E402
+from run_daily_scan import DB_PATH, deduplicate_listing_rows, run_scan  # noqa: E402
 
 
 def cmd_stats() -> None:
@@ -32,22 +32,37 @@ def cmd_stats() -> None:
     candidates = conn.execute("SELECT COUNT(*) FROM listings WHERE hard_discard = 0").fetchone()[0]
     particulares = conn.execute("SELECT COUNT(*) FROM listings WHERE is_agency = 0").fetchone()[0]
     by_portal = dict(conn.execute("SELECT portal, COUNT(*) FROM listings GROUP BY portal").fetchall())
-    top5 = [
-        dict(r)
-        for r in conn.execute(
-            """
-            SELECT id, portal, title, price_eur, is_agency, seller_name, final_ranking_score
-            FROM listings WHERE hard_discard = 0
-            ORDER BY final_ranking_score DESC LIMIT 5
-            """
-        ).fetchall()
-    ]
+    cand_rows = conn.execute(
+        """
+        SELECT id, portal, title, neighborhood, price_eur, sqm, bedrooms, is_agency, seller_name, final_ranking_score, score_json
+        FROM listings WHERE hard_discard = 0
+        ORDER BY final_ranking_score DESC
+        """
+    ).fetchall()
     conn.close()
+    dedup = deduplicate_listing_rows(cand_rows)
+    top5 = [
+        {
+            "id": r["id"],
+            "portal": r["portal"],
+            "also_in_portals": r["also_in_portals"],
+            "neighborhood": r["matched_neighborhood"],
+            "zone_points": r["zone_points"],
+            "title": r["title"],
+            "price_eur": int(r["price_eur"]),
+            "is_agency": r["is_agency"],
+            "seller_name": r["seller_name"],
+            "final_ranking_score": r["final_ranking_score"],
+        }
+        for r in dedup[:5]
+    ]
     print(
         json.dumps(
             {
+                "repo_path": str(BASE_DIR),
                 "total_listings": total,
                 "valid_candidates": candidates,
+                "unique_candidates": len(dedup),
                 "particulares": particulares,
                 "by_portal": by_portal,
                 "top_5": top5,

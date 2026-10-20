@@ -759,6 +759,49 @@ def scrape_redpiso_zaragoza(cached_raw_map: Optional[Dict[str, Dict[str, Any]]] 
     return results
 
 
+def deduplicate_listing_rows(rows: List[sqlite3.Row]) -> List[Dict[str, Any]]:
+    """
+    Fusiona anuncios duplicados del mismo inmueble publicados en distintos portales
+    (mismo precio, m² con margen ±2 m², habitaciones y mismo barrio o agencia).
+    Devuelve diccionarios enriquecidos con `matched_neighborhood`, `zone_points` y `also_in_portals`.
+    """
+    unique: List[Dict[str, Any]] = []
+    for r in rows:
+        d = dict(r)
+        sc = json.loads(d.get("score_json") or "{}")
+        z_info = sc.get("zone_info", {})
+        matched_nb = z_info.get("matched_neighborhood") or d.get("neighborhood") or "Zaragoza"
+        zone_pts = float(z_info.get("zone_score_10") or sc.get("scores_1_to_10", {}).get("neighborhood_tier") or 5.5)
+        d["matched_neighborhood"] = matched_nb
+        d["zone_points"] = zone_pts
+        d["also_in_portals"] = []
+
+        price = int(round(float(d.get("price_eur") or 0)))
+        sqm = int(round(float(d.get("sqm") or 0)))
+        beds = int(d.get("bedrooms") or 0)
+        seller = (d.get("seller_name") or "").strip().lower()[:10]
+        nb_norm = matched_nb.strip().lower()
+
+        matched_existing = None
+        for ex in unique:
+            ex_price = int(round(float(ex.get("price_eur") or 0)))
+            ex_sqm = int(round(float(ex.get("sqm") or 0)))
+            ex_beds = int(ex.get("bedrooms") or 0)
+            ex_seller = (ex.get("seller_name") or "").strip().lower()[:10]
+            ex_nb = (ex.get("matched_neighborhood") or "").strip().lower()
+            if ex_price == price and abs(ex_sqm - sqm) <= 2 and ex_beds == beds and (ex_nb == nb_norm or (seller and ex_seller == seller)):
+                matched_existing = ex
+                break
+
+        if matched_existing is None:
+            unique.append(d)
+        else:
+            if d.get("portal") and d.get("portal") != matched_existing.get("portal"):
+                if d["portal"] not in matched_existing["also_in_portals"]:
+                    matched_existing["also_in_portals"].append(d["portal"])
+    return unique
+
+
 def run_scan(incremental: bool = True, recalc_only: bool = False, quiet: bool = False) -> Dict[str, Any]:
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
@@ -824,6 +867,11 @@ def run_scan(incremental: bool = True, recalc_only: bool = False, quiet: bool = 
                 item["image_pixel_luminance"] = img_stats["avg_brightness_0_255"]
 
         score_res = score_listing(item, profile)
+        resolved_nb = score_res["zone_info"]["matched_neighborhood"]
+        if "raw_neighborhood" not in item:
+            item["raw_neighborhood"] = item.get("neighborhood", "")
+        if resolved_nb and resolved_nb not in ("Zaragoza Capital", "Zaragoza (General)"):
+            item["neighborhood"] = resolved_nb
 
         existing = conn.execute("SELECT price_eur, first_seen_date, user_status, user_notes FROM listings WHERE id = ?", (lid,)).fetchone()
         if existing is None:
@@ -880,7 +928,7 @@ def run_scan(incremental: bool = True, recalc_only: bool = False, quiet: bool = 
                 item.get("portal", ""),
                 item.get("url", ""),
                 item.get("title", ""),
-                item.get("neighborhood", ""),
+                resolved_nb or item.get("neighborhood", ""),
                 item.get("address", ""),
                 item.get("price_eur", 0),
                 prev_price,
@@ -928,37 +976,47 @@ def run_scan(incremental: bool = True, recalc_only: bool = False, quiet: bool = 
     )
     conn.commit()
 
-    top_rows = conn.execute(
+    candidate_rows = conn.execute(
         """
         SELECT id, title, neighborhood, portal, is_agency, seller_name, price_eur, sqm, bedrooms, floor_num,
                final_ranking_score, base_score_100, zone_tier, score_json, url
         FROM listings
         WHERE hard_discard = 0
         ORDER BY final_ranking_score DESC
-        LIMIT 15
         """
     ).fetchall()
+
+    dedup_candidates = deduplicate_listing_rows(candidate_rows)
+    top_rows = dedup_candidates[:15]
 
     report_path = REPORTS_DIR / f"report_{today_str}.md"
     lines = [
         f"# Informe Diario de Viviendas Reales en Zaragoza ({today_str})",
         "",
         f"- **Fecha de ejecución**: `{now_iso}`",
+        f"- **Repositorio activo**: `C:\\personal\\Git_Repositories\\zgz-house-finder`",
         f"- **Viviendas reales analizadas**: **{len(all_listings)}** (`Fotocasa`: {len(fc_listings)}, `Pisos.com`: {len(pisos_listings)}, `Tecnocasa`: {len(tc_listings)}, `Redpiso`: {len(rp_listings)})",
+        f"- **Candidatas únicas tras deduplicación multi-portal**: `{len(dedup_candidates)}`",
         f"- **Nuevas ofertas detectadas**: `{new_count}`",
         f"- **Bajadas de precio**: `{price_drops}`",
         "",
-        "## Top 15 Viviendas Reales según tu Perfil (Con Penalización a Agencias)",
+        "## Top 15 Viviendas Únicas según tu Perfil (Puntuación de Zona: 10 / 7.8 / 5.5 / 3.5 pts)",
         "",
-        "| # | Puntos | Vendedor | Vivienda | Portal | Precio | Reforma Est. | Coste Total | Cuota Hip. | Link Real |",
-        "|---|--------|----------|----------|--------|--------|--------------|-------------|------------|-----------|",
+        "| # | Puntos | Barrio (Pts Zona) | Vendedor | Vivienda | Portal | Precio | Reforma Est. | Coste Total | Cuota Hip. | Enlace |",
+        "|---|--------|-------------------|----------|----------|--------|--------|--------------|-------------|------------|--------|",
     ]
     for idx, r in enumerate(top_rows, 1):
         sc = json.loads(r["score_json"])
         fa = sc["financial_analysis"]
-        seller_badge = "👤 Particular" if not r["is_agency"] else f"🏢 {r['seller_name'][:18]}"
+        z_pts = r["zone_points"]
+        z_pts_str = f"{int(z_pts)}" if float(z_pts).is_integer() else f"{z_pts:.1f}"
+        zone_col = f"{r['matched_neighborhood']} ({z_pts_str} pts)"
+        seller_badge = "Particular" if not r["is_agency"] else f"Agencia: {r['seller_name'][:18]}"
+        portal_str = r["portal"]
+        if r.get("also_in_portals"):
+            portal_str += f" (+{', '.join(r['also_in_portals'])})"
         lines.append(
-            f"| {idx} | **{r['final_ranking_score']} pts** | {seller_badge} | {r['title']} | {r['portal']} | "
+            f"| {idx} | **{r['final_ranking_score']} pts** | {zone_col} | {seller_badge} | {r['title']} | {portal_str} | "
             f"{int(r['price_eur']):,} € | {int(fa['estimated_reform_eur']):,} € | **{int(fa['total_project_cost_eur']):,} €** | "
             f"{fa['monthly_mortgage_eur']:.0f} €/mes | [Ver piso]({r['url']}) |"
         )
@@ -972,6 +1030,8 @@ def run_scan(incremental: bool = True, recalc_only: bool = False, quiet: bool = 
         {
             "id": r["id"],
             "score": r["final_ranking_score"],
+            "neighborhood": r["matched_neighborhood"],
+            "zone_points": r["zone_points"],
             "seller": "Particular" if not r["is_agency"] else r["seller_name"],
             "title": r["title"],
             "price_eur": int(r["price_eur"]),
@@ -984,6 +1044,7 @@ def run_scan(incremental: bool = True, recalc_only: bool = False, quiet: bool = 
         "run_at": now_iso,
         "mode": "recalc_only" if recalc_only else ("incremental" if incremental else "full"),
         "total_processed": len(all_listings),
+        "unique_candidates": len(dedup_candidates),
         "new_listings": new_count,
         "price_drops": price_drops,
         "report_path": str(report_path),
