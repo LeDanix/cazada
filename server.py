@@ -350,19 +350,60 @@ class ZgzHouseFinderHandler(BaseHTTPRequestHandler):
             self.wfile.write(content)
             return
 
-        if parsed.path in ("/favicon.svg", "/favicon.ico"):
+        if parsed.path == "/favicon.svg":
             svg_logo = (
                 '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">'
                 '<rect width="64" height="64" rx="14" fill="#2B5B84"/>'
-                '<path d="M18 18h28v7.5L27.8 46H46v8H18v-7.5L36.2 26H18V18z" fill="#FFFFFF"/>'
+                '<path d="M16 15h32v8.5L26.5 41H48v8H16v-8.5L37.5 23H16V15z" fill="#FFFFFF"/>'
                 '</svg>'
             ).encode("utf-8")
             self.send_response(200)
             self.send_header("Content-Type", "image/svg+xml; charset=utf-8")
-            self.send_header("Cache-Control", "public, max-age=86400")
+            self.send_header("Cache-Control", "no-cache")
             self.send_header("Content-Length", str(len(svg_logo)))
             self.end_headers()
             self.wfile.write(svg_logo)
+            return
+
+        if parsed.path in ("/favicon.ico", "/favicon.png"):
+            import io
+            from PIL import Image, ImageDraw
+
+            scale = 4
+            size = 64 * scale
+            img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+            draw = ImageDraw.Draw(img)
+            # Fondo Azul Pantone #2B5B84 (RGB: 43, 91, 132) con bordes redondeados
+            draw.rounded_rectangle([0, 0, size - 1, size - 1], radius=14 * scale, fill=(43, 91, 132, 255))
+            # Letra Z blanca geométrica
+            z_poly = [
+                (16 * scale, 15 * scale),
+                (48 * scale, 15 * scale),
+                (48 * scale, 23 * scale),
+                (27 * scale, 41 * scale),
+                (48 * scale, 41 * scale),
+                (48 * scale, 49 * scale),
+                (16 * scale, 49 * scale),
+                (16 * scale, 41 * scale),
+                (37 * scale, 23 * scale),
+                (16 * scale, 23 * scale),
+            ]
+            draw.polygon(z_poly, fill=(255, 255, 255, 255))
+            img_small = img.resize((64, 64), Image.Resampling.LANCZOS)
+            buf = io.BytesIO()
+            if parsed.path.endswith(".ico"):
+                img_small.save(buf, format="ICO", sizes=[(32, 32), (64, 64)])
+                ctype = "image/x-icon"
+            else:
+                img_small.save(buf, format="PNG")
+                ctype = "image/png"
+            data = buf.getvalue()
+            self.send_response(200)
+            self.send_header("Content-Type", ctype)
+            self.send_header("Cache-Control", "no-cache")
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
             return
 
         if parsed.path == "/api/state":

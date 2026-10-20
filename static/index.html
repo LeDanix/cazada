@@ -3,9 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Zaragoza Vivienda — Análisis y Valoración Inmobiliaria</title>
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-  <link rel="shortcut icon" href="/favicon.ico" />
+  <title>ZgzHouseFinder — Análisis y Valoración Inmobiliaria en Zaragoza</title>
+  <link rel="icon" type="image/png" sizes="64x64" href="/favicon.png?v=5" />
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232B5B84'/%3E%3Cpath d='M16 15h32v8.5L26.5 41H48v8H16v-8.5L37.5 23H16V15z' fill='%23FFFFFF'/%3E%3C/svg%3E" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
@@ -83,17 +84,43 @@
     }
 
     .brand-mark {
-      width: 38px;
-      height: 38px;
-      border-radius: 6px;
+      height: 40px;
+      padding: 0 14px 0 11px;
+      border-radius: 7px;
       background: var(--primary);
-      display: flex;
+      display: inline-flex;
       align-items: center;
-      justify-content: center;
-      font-size: 0.85rem;
-      font-weight: 700;
-      letter-spacing: 0.06em;
+      gap: 9px;
       color: #FFFFFF;
+      box-shadow: 0 1px 3px rgba(43, 91, 132, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      transition: background-color 0.15s ease, transform 0.15s ease;
+      user-select: none;
+    }
+
+    .brand:hover .brand-mark {
+      background: var(--primary-hover);
+    }
+
+    .brand-mark svg {
+      width: 22px;
+      height: 22px;
+      flex-shrink: 0;
+      display: block;
+    }
+
+    .brand-mark-text {
+      font-size: 0.98rem;
+      font-weight: 800;
+      letter-spacing: -0.015em;
+      color: #FFFFFF;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .brand-mark-text span {
+      font-weight: 500;
+      opacity: 0.92;
     }
 
     .brand h1 {
@@ -847,7 +874,7 @@
       border: 1px solid var(--border);
     }
 
-    /* MAPA CON ESTADO ACTIVO Y BARRA DE CONTROL */
+    /* MAPA CON ESTADO ACTIVO, MARCADORES DE PRECIO Y GRADIENTE ROJO-VERDE */
     .btn-map-active {
       background: var(--primary) !important;
       color: #FFFFFF !important;
@@ -868,17 +895,6 @@
       display: block;
     }
 
-    .map-panel-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 12px;
-      padding: 12px 18px;
-      background: var(--primary-soft);
-      border-bottom: 1px solid var(--primary-border);
-    }
-
     .map-panel-footer {
       display: flex;
       justify-content: space-between;
@@ -893,8 +909,65 @@
     }
 
     #map-container {
-      height: 500px;
+      height: 520px;
       width: 100%;
+    }
+
+    .leaflet-div-icon.map-price-icon {
+      background: transparent;
+      border: none;
+    }
+
+    .map-price-badge {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2px 7px;
+      border-radius: 12px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #FFFFFF;
+      white-space: nowrap;
+      border: 1.5px solid #FFFFFF;
+      box-shadow: 0 2px 5px rgba(15, 23, 42, 0.32);
+      transform: translate(-50%, -100%);
+      transition: transform 0.14s ease, box-shadow 0.14s ease;
+      cursor: pointer;
+      line-height: 1.25;
+      letter-spacing: -0.01em;
+    }
+
+    .map-price-badge::after {
+      content: "";
+      position: absolute;
+      bottom: -5px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-width: 5px 4px 0 4px;
+      border-style: solid;
+      border-color: var(--marker-bg, #2B5B84) transparent transparent transparent;
+    }
+
+    .leaflet-marker-icon:hover {
+      z-index: 9999 !important;
+    }
+
+    .map-price-badge:hover {
+      transform: translate(-50%, -106%) scale(1.12);
+      box-shadow: 0 4px 10px rgba(15, 23, 42, 0.45);
+    }
+
+    .score-scale-bar {
+      display: inline-block;
+      width: 110px;
+      height: 9px;
+      border-radius: 5px;
+      background: linear-gradient(90deg, #B91C1C 0%, #D97706 50%, #15803D 100%);
+      border: 1px solid rgba(15, 23, 42, 0.15);
+      vertical-align: middle;
+      margin: 0 6px;
     }
 
     /* CONFIGURACIÓN DE PESOS Y SELECTOR DE ZONAS */
@@ -1091,10 +1164,16 @@
 
   <header>
     <div class="header-inner">
-      <div class="brand" onclick="closePropertyDetail()">
-        <div class="brand-mark" style="font-size:1.15rem; font-weight:800;">Z</div>
+      <div class="brand" onclick="closePropertyDetail()" title="Volver al catálogo principal">
+        <div class="brand-mark">
+          <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M3 13.5L14 4L25 13.5" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M8.5 13.5H19.5V16.2L11.8 22.3H19.5V25H8.5V22.3L16.2 16.2H8.5V13.5Z" fill="#FFFFFF"/>
+          </svg>
+          <span class="brand-mark-text">Zgz<span>House</span>Finder</span>
+        </div>
         <div>
-          <h1>Zaragoza Vivienda — Análisis y Selección</h1>
+          <h1>Análisis y Selección Inmobiliaria en Zaragoza</h1>
           <p>Valoración técnica y financiera auditable sobre Fotocasa, Pisos.com, Tecnocasa y Redpiso</p>
         </div>
       </div>
@@ -1123,23 +1202,18 @@
         <button class="tab-btn" onclick="switchTab('guide', this)">Guía Financiera e ITP Aragón</button>
       </div>
 
-      <!-- PANEL DEL MAPA CON INSTRUCCIONES CLARAS Y BOTÓN DE SALIDA -->
+      <!-- PANEL DEL MAPA (SIN CABECERA COMENTADA, SALIDA POR CABECERA WEB O BOTÓN PEQUEÑO INFERIOR) -->
       <div id="map-panel">
-        <div class="map-panel-header">
-          <div>
-            <strong style="color:var(--primary); font-size:0.92rem;">Vista Cartográfica de Zaragoza (OpenStreetMap Libre · Sin API Key)</strong>
-            <div style="font-size:0.78rem; color:var(--text-secondary); margin-top:2px;">
-              Haz clic en cualquier círculo del mapa para ver el resumen del piso. Para salir del mapa, pulsa <strong>«Cerrar mapa»</strong>, vuelve a pulsar el botón superior marcado o presiona la tecla <strong>Esc</strong>.
-            </div>
-          </div>
-          <button class="btn-primary" onclick="toggleMap(false)">Cerrar mapa y volver al listado (Esc)</button>
-        </div>
         <div id="map-container"></div>
         <div class="map-panel-footer">
-          <div style="display:flex; gap:16px; flex-wrap:wrap;">
-            <span><strong style="color:#1E6F5C;">● Verde:</strong> Particular (0 € comisión)</span>
-            <span><strong style="color:#2B5B84;">● Azul Pantone:</strong> Puntuación alta (≥ 75 pts)</span>
-            <span><strong style="color:#9A6700;">● Ámbar:</strong> Puntuación media</span>
+          <div style="display:flex; gap:14px; align-items:center; flex-wrap:wrap;">
+            <span>
+              <strong>Escala de Puntuación (0 – 100 pts):</strong>
+              <span style="color:#B91C1C; font-weight:700;">0 (Rojo)</span>
+              <span class="score-scale-bar"></span>
+              <span style="color:#15803D; font-weight:700;">100 (Verde)</span>
+            </span>
+            <span style="color:var(--text-muted);">· Cada marcador indica el <strong>precio base</strong> de la vivienda</span>
           </div>
           <button class="btn-secondary" style="padding:4px 10px; font-size:0.75rem;" onclick="toggleMap(false)">Ocultar mapa</button>
         </div>
@@ -2292,33 +2366,104 @@
       }
     });
 
+    function scoreToRedGreenColor(score) {
+      // Escala de 0 a 100 puntos: 0 = Rojo intenso (hue 0°), 50-60 = Ámbar (hue 38°), 100 = Verde esmeralda (hue 142°)
+      // Se calibra el tramo activo habitual (35 - 92 pts) dentro del rango 0-100 para máxima distinción cromática
+      const clamped = Math.max(0, Math.min(100, Number(score) || 0));
+      let norm;
+      if (clamped <= 40) {
+        norm = (clamped / 40) * 0.15; // 0..40 pts -> rojo (0..0.15)
+      } else if (clamped >= 90) {
+        norm = 0.88 + ((clamped - 90) / 10) * 0.12; // 90..100 pts -> verde intenso (0.88..1.0)
+      } else {
+        norm = 0.15 + ((clamped - 40) / 50) * 0.73; // 40..90 pts -> transición continua rojo-naranja-ámbar-verde
+      }
+      const hue = Math.round(norm * 142); // 0° (rojo) -> 142° (verde)
+      const sat = 74;
+      const light = hue >= 30 && hue <= 65 ? 39 : 36; // Oscurecido ligeramente en amarillo/ámbar para legibilidad de texto blanco
+      return `hsl(${hue}, ${sat}%, ${light}%)`;
+    }
+
+    function formatShortPrice(price) {
+      const n = Number(price) || 0;
+      if (n >= 1000) {
+        const k = n / 1000;
+        const formatted = Number.isInteger(k) ? k.toString() : k.toFixed(1).replace('.0', '');
+        return `${formatted}k €`;
+      }
+      return `${n} €`;
+    }
+
     function updateMapMarkers(props) {
       if (!MAP_INSTANCE) return;
       MAP_MARKERS.forEach(m => MAP_INSTANCE.removeLayer(m));
       MAP_MARKERS = [];
+
+      // Pequeña separación determinista si dos marcadores caen exactamente a menos de ~45 metros
+      const placedCoords = [];
       props.forEach((p, idx) => {
-        const lat = p.map_lat || p.lat;
-        const lon = p.map_lon || p.lon;
+        let lat = p.map_lat || p.lat;
+        let lon = p.map_lon || p.lon;
         if (!lat || !lon) return;
-        const color = !p.is_agency ? '#1E6F5C' : (p.total_points >= 75 ? '#2B5B84' : '#9A6700');
-        const marker = L.circleMarker([lat, lon], {
-          radius: 9,
-          fillColor: color,
-          color: '#FFFFFF',
-          weight: 2,
-          fillOpacity: 0.92
+
+        for (let attempt = 0; attempt < 8; attempt++) {
+          const collision = placedCoords.some(c => Math.hypot(c.lat - lat, c.lon - lon) < 0.00055);
+          if (!collision) break;
+          const angle = (idx * 137.5 + attempt * 60) * (Math.PI / 180);
+          const radius = 0.00065 * (1 + attempt * 0.45);
+          lat += radius * Math.cos(angle);
+          lon += radius * Math.sin(angle);
+        }
+        placedCoords.push({ lat, lon });
+
+        const color = scoreToRedGreenColor(p.total_points);
+        const shortPrice = formatShortPrice(p.price);
+
+        const priceIcon = L.divIcon({
+          className: 'map-price-icon',
+          html: `<div class="map-price-badge" style="background:${color}; --marker-bg:${color};" title="#${idx + 1} · ${p.neighborhood} · ${fmtEur(p.price)} (${p.total_points.toFixed(1)} pts)">${shortPrice}</div>`,
+          iconSize: [0, 0],
+          iconAnchor: [0, 0],
+          popupAnchor: [0, -26]
+        });
+
+        const marker = L.marker([lat, lon], {
+          icon: priceIcon,
+          zIndexOffset: Math.round((p.total_points || 0) * 10)
         }).addTo(MAP_INSTANCE);
-        const gpsNote = p.has_exact_gps ? 'Ubicación GPS exacta del portal' : `Ubicación aproximada en ${p.neighborhood}`;
+
+        const gpsNote = p.has_exact_gps ? 'GPS exacto' : `Zona ${p.neighborhood}`;
+        const photos = (p.photo_urls && p.photo_urls.length) ? p.photo_urls : (p.photo_url ? [p.photo_url] : []);
+        const mainImgSrc = photos.length ? proxiedImg(photos[0]) : '';
+        const imgHtml = mainImgSrc
+          ? `<div style="position:relative; width:100%; height:132px; border-radius:6px; overflow:hidden; margin-bottom:8px; background:#E2E8F0; cursor:pointer;" onclick="openPropertyDetail('${p.id}')">
+               <img src="${mainImgSrc}" alt="${(p.title || '').replace(/"/g, '&quot;')}" style="width:100%; height:100%; object-fit:cover; display:block;" loading="lazy" />
+               <span style="position:absolute; top:6px; left:6px; background:rgba(15,23,42,0.82); color:#FFFFFF; font-size:0.7rem; font-weight:700; padding:2px 7px; border-radius:4px;">#${idx + 1} · ${p.portal}</span>
+               <span style="position:absolute; top:6px; right:6px; background:${color}; color:#FFFFFF; font-size:0.72rem; font-weight:700; padding:2px 7px; border-radius:4px; border:1px solid #FFFFFF;">${p.total_points.toFixed(1)} / 100 pts</span>
+             </div>`
+          : '';
+
         marker.bindPopup(`
-          <div style="font-family:sans-serif; min-width:225px; color:#1E293B; line-height:1.45;">
-            <strong>#${idx + 1} · ${p.neighborhood} (${p.zone_points} pts)</strong><br/>
-            <span style="font-size:0.78rem; color:#64748B;">${p.portal} · ${gpsNote}</span><br/>
-            <span>${p.is_agency ? 'Agencia: ' + p.seller_name : 'Particular (0 € comisión)'}</span><br/>
-            <span style="color:#2B5B84;font-weight:700;font-size:1.02rem;">${fmtEur(p.price)}</span> (${p.sqm} m² · ${p.bedrooms} hab)<br/>
-            <span>Puntuación total: <strong>${p.total_points.toFixed(1)} pts</strong></span><br/>
-            <a href="#/piso/${encodeURIComponent(p.id)}" style="display:inline-block;margin-top:6px;color:#2B5B84;font-weight:700;">Ver ficha completa del inmueble</a>
+          <div style="font-family:-apple-system,BlinkMacSystemFont,'Inter',sans-serif; width:245px; color:#1E293B; line-height:1.42;">
+            ${imgHtml}
+            <div style="font-weight:700; font-size:0.86rem; color:#1E293B; margin-bottom:2px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">
+              ${p.title}
+            </div>
+            <div style="font-size:0.75rem; color:#64748B; margin-bottom:6px;">
+              <strong>${p.neighborhood}</strong> (${p.zone_points} pts zona) · ${gpsNote}
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:baseline; padding:6px 8px; background:#F8FAFC; border:1px solid #E2E8F0; border-radius:5px; margin-bottom:6px;">
+              <span style="color:#2B5B84; font-weight:800; font-size:1.02rem;">${fmtEur(p.price)}</span>
+              <span style="font-size:0.75rem; color:#334155; font-weight:600;">${p.sqm} m² · ${p.bedrooms} hab</span>
+            </div>
+            <div style="font-size:0.74rem; color:#475569; margin-bottom:8px;">
+              ${p.is_agency ? 'Agencia: ' + p.seller_name : '<strong style="color:#1E6F5C;">Particular (0 € comisión)</strong>'}
+            </div>
+            <a href="#/piso/${encodeURIComponent(p.id)}" style="display:block; text-align:center; padding:6px 10px; background:#2B5B84; color:#FFFFFF; border-radius:5px; text-decoration:none; font-size:0.78rem; font-weight:600;">
+              Ver ficha completa del inmueble
+            </a>
           </div>
-        `);
+        `, { maxWidth: 265 });
         MAP_MARKERS.push(marker);
       });
     }
