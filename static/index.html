@@ -2656,7 +2656,9 @@
         if (data.ok) {
           APP_STATE = data.state;
           renderAll();
-          showToast(`Escaneo completado: ${data.scan_stats.total_processed} viviendas procesadas.`);
+          const st = data.scan_stats || {};
+          const removedTxt = st.removed_listings ? ` · ${st.removed_listings} dados de baja eliminados` : '';
+          showToast(`Escaneo completado: ${st.total_processed || 0} viviendas analizadas (${st.new_listings || 0} nuevas${removedTxt}).`);
         }
       } finally {
         btn.textContent = 'Actualizar portales';

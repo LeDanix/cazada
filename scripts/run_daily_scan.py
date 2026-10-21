@@ -7,7 +7,7 @@ import sqlite3
 import sys
 import urllib.request
 from pathlib import Path
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Tuple
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(BASE_DIR / "scripts"))
@@ -802,6 +802,134 @@ def deduplicate_listing_rows(rows: List[sqlite3.Row]) -> List[Dict[str, Any]]:
     return unique
 
 
+def is_listing_url_alive(url: str, portal: str = "") -> Tuple[bool, str]:
+    """
+    Comprueba mediante petición HTTP ligera si el anuncio sigue activo en su portal original.
+    Detecta códigos 404/410, redirecciones a páginas de búsqueda (?propertyNotFound, /l)
+    y mensajes de baja de anuncio en Fotocasa, Pisos.com, Tecnocasa y Redpiso.
+    """
+    if not url or not url.startswith("http"):
+        return True, "manual_or_no_url"
+    try:
+        req = urllib.request.Request(url, headers=HEADERS)
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            final_url = resp.geturl()
+            status = getattr(resp, "status", 200)
+            if status in (404, 410):
+                return False, f"http_{status}"
+
+            if "fotocasa.es" in url:
+                if (
+                    "propertyNotFound" in final_url
+                    or "/viviendas/" in final_url
+                    or not final_url.rstrip("/").endswith("/d")
+                ):
+                    return False, f"redirect_{final_url}"
+            elif "pisos.com" in url:
+                if "/comprar/" not in final_url:
+                    return False, f"redirect_{final_url}"
+            elif "tecnocasa.es" in url:
+                if not final_url.endswith(".html"):
+                    return False, f"redirect_{final_url}"
+
+            chunk = resp.read(32768).decode("utf-8", errors="ignore")
+            m_title = re.search(r"<title[^>]*>(.*?)</title>", chunk, re.I | re.S)
+            title = m_title.group(1).strip() if m_title else ""
+            if "redpiso.es" in url:
+                if title.lower() == "inmueble | redpiso" or "no encontrado" in title.lower():
+                    return False, f"dead_title_{title}"
+
+            low = chunk.lower()
+            for dead_phrase in (
+                "este anuncio ya no está disponible",
+                "el anuncio que buscas ya no está disponible",
+                "inmueble ya no está disponible",
+                "anuncio dado de baja",
+                "propertynotfound",
+            ):
+                if dead_phrase in low:
+                    return False, f"phrase_{dead_phrase}"
+            return True, "ok"
+    except urllib.error.HTTPError as e:
+        if e.code in (404, 410):
+            return False, f"http_error_{e.code}"
+        return True, f"http_other_{e.code}"
+    except Exception as e:
+        return True, f"net_error_{e}"
+
+
+def prune_inactive_listings(
+    conn: sqlite3.Connection,
+    seen_ids: Optional[set] = None,
+    quiet: bool = False,
+    check_all: bool = False,
+) -> List[Dict[str, Any]]:
+    """
+    Verifica y elimina de la base de datos aquellos anuncios que ya no están disponibles
+    en su portal inmobiliario. Revisa:
+      1) Todos los anuncios que no hayan aparecido en el barrido actual (`id not in seen_ids`).
+      2) El Top 25 de viviendas mejor puntuadas (para garantizar que el ranking principal
+         nunca contenga anuncios recién dados de baja).
+      3) O la totalidad de la base de datos si `check_all=True`.
+    """
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
+    rows = conn.execute(
+        """
+        SELECT id, portal, title, url, final_ranking_score, hard_discard, last_seen_date
+        FROM listings
+        ORDER BY hard_discard ASC, final_ranking_score DESC
+        """
+    ).fetchall()
+
+    to_verify: List[Dict[str, Any]] = []
+    for idx, r in enumerate(rows):
+        lid = r["id"]
+        if lid.startswith("MANUAL-"):
+            continue
+        if check_all:
+            to_verify.append(dict(r))
+        elif seen_ids is not None and lid not in seen_ids:
+            to_verify.append(dict(r))
+        elif idx < 25 and r["hard_discard"] == 0:
+            to_verify.append(dict(r))
+
+    if not to_verify:
+        return []
+
+    if not quiet:
+        print(f"      -> Verificando disponibilidad real de {len(to_verify)} anuncios candidatos/no vistos...")
+
+    removed: List[Dict[str, Any]] = []
+
+    def _verify_one(item_row: Dict[str, Any]) -> Tuple[Dict[str, Any], bool, str]:
+        alive, reason = is_listing_url_alive(item_row.get("url", ""), item_row.get("portal", ""))
+        return item_row, alive, reason
+
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        futures = [executor.submit(_verify_one, r) for r in to_verify]
+        for fut in as_completed(futures):
+            item_row, alive, reason = fut.result()
+            if not alive:
+                removed.append({
+                    "id": item_row["id"],
+                    "portal": item_row["portal"],
+                    "title": item_row["title"],
+                    "score": item_row["final_ranking_score"],
+                    "reason": reason,
+                })
+
+    if removed:
+        for rem in removed:
+            conn.execute("DELETE FROM listings WHERE id = ?", (rem["id"],))
+            conn.execute("DELETE FROM price_history WHERE listing_id = ?", (rem["id"],))
+        conn.commit()
+        if not quiet:
+            print(f"      -> Eliminados {len(removed)} anuncios dados de baja en sus portales.")
+
+    return removed
+
+
 def run_scan(incremental: bool = True, recalc_only: bool = False, quiet: bool = False) -> Dict[str, Any]:
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
@@ -873,10 +1001,11 @@ def run_scan(incremental: bool = True, recalc_only: bool = False, quiet: bool = 
         if resolved_nb and resolved_nb not in ("Zaragoza Capital", "Zaragoza (General)"):
             item["neighborhood"] = resolved_nb
 
-        existing = conn.execute("SELECT price_eur, first_seen_date, user_status, user_notes FROM listings WHERE id = ?", (lid,)).fetchone()
+        existing = conn.execute("SELECT price_eur, first_seen_date, last_seen_date, user_status, user_notes FROM listings WHERE id = ?", (lid,)).fetchone()
         if existing is None:
             new_count += 1
             first_seen = today_str
+            last_seen = today_str
             prev_price = item.get("previous_price_eur")
             user_status = "nuevo"
             user_notes = ""
@@ -886,6 +1015,7 @@ def run_scan(incremental: bool = True, recalc_only: bool = False, quiet: bool = 
             )
         else:
             first_seen = existing["first_seen_date"]
+            last_seen = existing["last_seen_date"] if recalc_only else today_str
             user_status = existing["user_status"]
             user_notes = existing["user_notes"]
             old_price = existing["price_eur"]
@@ -960,9 +1090,16 @@ def run_scan(incremental: bool = True, recalc_only: bool = False, quiet: bool = 
                 user_status,
                 user_notes,
                 first_seen,
-                today_str,
+                last_seen,
             ),
         )
+
+    conn.commit()
+
+    removed_listings: List[Dict[str, Any]] = []
+    if not recalc_only:
+        seen_ids_this_run = {item["id"] for item in all_listings}
+        removed_listings = prune_inactive_listings(conn, seen_ids=seen_ids_this_run, quiet=quiet)
 
     conn.execute(
         "INSERT INTO scan_runs (run_at, total_processed, new_listings, price_drops, notes) VALUES (?, ?, ?, ?, ?)",
@@ -971,7 +1108,7 @@ def run_scan(incremental: bool = True, recalc_only: bool = False, quiet: bool = 
             len(all_listings),
             new_count,
             price_drops,
-            f"Portales reales: Fotocasa ({len(fc_listings)}), Pisos.com ({len(pisos_listings)}), Tecnocasa ({len(tc_listings)}), Redpiso ({len(rp_listings)})",
+            f"Portales reales: Fotocasa ({len(fc_listings)}), Pisos.com ({len(pisos_listings)}), Tecnocasa ({len(tc_listings)}), Redpiso ({len(rp_listings)}) · Eliminados por baja: {len(removed_listings)}",
         ),
     )
     conn.commit()
@@ -999,6 +1136,7 @@ def run_scan(incremental: bool = True, recalc_only: bool = False, quiet: bool = 
         f"- **Candidatas únicas tras deduplicación multi-portal**: `{len(dedup_candidates)}`",
         f"- **Nuevas ofertas detectadas**: `{new_count}`",
         f"- **Bajadas de precio**: `{price_drops}`",
+        f"- **Anuncios dados de baja eliminados**: `{len(removed_listings)}`",
         "",
         "## Top 15 Viviendas Únicas según tu Perfil (Puntuación de Zona: 10 / 7.8 / 5.5 / 3.5 pts)",
         "",
@@ -1047,6 +1185,7 @@ def run_scan(incremental: bool = True, recalc_only: bool = False, quiet: bool = 
         "unique_candidates": len(dedup_candidates),
         "new_listings": new_count,
         "price_drops": price_drops,
+        "removed_listings": len(removed_listings),
         "report_path": str(report_path),
         "top_3": top3_digest,
     }
