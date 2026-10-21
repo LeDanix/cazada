@@ -1,6 +1,6 @@
 {
   "profile_name": "Comprador Joven Zaragoza (<35 años) - Eficiencia & Reforma Inteligente",
-  "updated_at": "2026-10-20 11:31",
+  "updated_at": "2026-10-21 08:16",
   "financials": {
     "age_under_35": true,
     "net_monthly_income_eur": 2100.0,
@@ -50,12 +50,12 @@
       "label": "Zona de 10 puntos",
       "neighborhoods": [
         "Actur",
-        "Universidad",
         "Fernando El Católico",
-        "Plaza Roma",
         "Hernán Cortés",
+        "Plaza Roma",
         "Romareda",
-        "Ruiseñores"
+        "Ruiseñores",
+        "Universidad"
       ]
     },
     "x3": {
@@ -63,16 +63,16 @@
       "base_score_10": 7.8,
       "label": "Zona de 7.8 puntos",
       "neighborhoods": [
-        "La Almozara",
         "Almozara",
         "Casablanca",
-        "Universitas",
-        "Los Enlaces",
-        "Independencia",
         "Centro",
+        "Independencia",
+        "La Almozara",
+        "Los Enlaces",
         "Magdalena",
         "Rebolería",
-        "Sagasta"
+        "Sagasta",
+        "Universitas"
       ]
     },
     "x2": {
@@ -80,19 +80,19 @@
       "base_score_10": 5.5,
       "label": "Zona de 5.5 puntos",
       "neighborhoods": [
+        "Arrabal",
+        "Barrio Jesús",
+        "Miraflores",
+        "Miralbueno",
+        "Montecanal",
+        "Parque Goya",
         "Pinares de Venecia",
         "Parque Venecia",
         "Venecia",
-        "Arrabal",
-        "Barrio Jesús",
-        "Santa Isabel",
-        "Parque Goya",
-        "Valdespartera",
         "Rosales del Canal",
-        "Miralbueno",
-        "Montecanal",
         "San José",
-        "Miraflores"
+        "Santa Isabel",
+        "Valdespartera"
       ]
     },
     "x1": {
@@ -100,15 +100,15 @@
       "base_score_10": 3.5,
       "label": "Zona de 3.5 puntos",
       "neighborhoods": [
-        "La Paz",
-        "Delicias",
-        "Las Fuentes",
-        "El Gancho",
-        "San Pablo",
         "Arcosur",
-        "Valdefierro",
+        "Delicias",
+        "El Gancho",
+        "La Paz",
+        "Las Fuentes",
         "Oliver",
-        "Torrero"
+        "San Pablo",
+        "Torrero",
+        "Valdefierro"
       ]
     }
   },
@@ -125,7 +125,7 @@
     },
     "street_microlocation": {
       "name": "Micro-localización por Calle",
-      "weight": 3.2,
+      "weight": 3.0,
       "description": "Calidad específica de la calle/tramo dentro del barrio (ej. avenidas principales, cercanía a zonas mejores, entorno consolidado)."
     },
     "size_and_layout": {
@@ -150,7 +150,7 @@
     },
     "condition_and_reform_viability": {
       "name": "Estado Interior y Viabilidad de Reforma (Cocina/Baño/Eficiencia)",
-      "weight": 2.8,
+      "weight": 3.0,
       "description": "Relación entre el estado actual y el coste estimado de sanitizar baños/cocina y mejorar eficiencia."
     },
     "insulation_and_hidden_installations": {
@@ -165,12 +165,12 @@
     },
     "building_health_and_neighbors": {
       "name": "Salud de la Finca (Ascensor, Cota Cero, ITE) y Nº de Vecinos",
-      "weight": 2.8,
+      "weight": 3.0,
       "description": "Ascensor instalado, portal sin barreras arquitectónicas, fachada/tejado en buen estado y comunidad amplia (15-30+ vecinos) para diluir derramas."
     },
     "noise_and_tranquility": {
       "name": "Nivel de Silencio y Tranquilidad",
-      "weight": 2.2,
+      "weight": 2.0,
       "description": "Ausencia de bares ruidosos en los bajos o tráfico pesado nocturno."
     },
     "mobility_and_parking": {

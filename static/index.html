@@ -589,12 +589,32 @@
       gap: 8px;
     }
 
-    /* VISTA PÁGINA INTERNA DE CADA VIVIENDA (#/piso/<id>) */
-    #view-property-detail {
+    /* VISTA PÁGINA INTERNA DE CADA VIVIENDA (#/piso/<id>) Y PANTALLA DE CONFIGURACIÓN (#/configuracion) */
+    #view-property-detail,
+    #view-config {
       display: none;
     }
-    #view-property-detail.active {
+    #view-property-detail.active,
+    #view-config.active {
       display: block;
+    }
+
+    .config-sticky-save-bar {
+      position: sticky;
+      bottom: 20px;
+      z-index: 250;
+      margin-top: 22px;
+      padding: 14px 22px;
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--primary-border);
+      border-radius: var(--radius);
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.14);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
     }
 
     .detail-topbar {
@@ -1218,7 +1238,7 @@
           <span class="pulse-dot"></span>
           <span id="last-scan-label">Cargando datos...</span>
         </div>
-        <button class="btn-secondary" id="btn-header-config" onclick="openTabFromHeader('weights')">Configuración</button>
+        <button class="btn-secondary" id="btn-header-config" onclick="toggleConfigView()">Configuración</button>
         <button class="btn-secondary" onclick="openAddModal()">Añadir inmueble</button>
         <button class="btn-primary" id="btn-scan" onclick="triggerDailyScan()">Actualizar portales</button>
       </div>
@@ -1232,8 +1252,7 @@
 
       <div class="nav-tabs">
         <button class="tab-btn active" id="tab-btn-ranking" data-tab="ranking" onclick="switchTab('ranking', this)">Catálogo de Viviendas</button>
-        <button class="tab-btn" id="tab-btn-map" data-tab="map" onclick="switchTab('map', this)">Mapa de Zaragoza</button>
-        <button class="tab-btn" id="tab-btn-weights" data-tab="weights" onclick="switchTab('weights', this)">Configuración</button>
+        <button class="tab-btn" id="tab-btn-map" data-tab="map" onclick="switchTab('map', this)">Mapa</button>
         <button class="tab-btn" id="tab-btn-neighborhoods" data-tab="neighborhoods" onclick="switchTab('neighborhoods', this)">Tabla de Barrios Zaragoza</button>
         <button class="tab-btn" id="tab-btn-guide" data-tab="guide" onclick="switchTab('guide', this)">Guía Financiera e ITP Aragón</button>
       </div>
@@ -1299,7 +1318,7 @@
         <div id="properties-list" class="property-grid"></div>
       </div>
 
-      <!-- TAB 2: MAPA DE ZARAGOZA (PESTAÑA INDEPENDIENTE) -->
+      <!-- TAB 2: MAPA (PESTAÑA INDEPENDIENTE) -->
       <div id="tab-map" class="tab-content">
         <div id="map-panel">
           <div id="map-container"></div>
@@ -1313,51 +1332,6 @@
               </span>
               <span style="color:var(--text-muted);">· Cada marcador indica el <strong>precio base</strong> de la vivienda (pulsa en un marcador para ver su foto principal y resumen)</span>
             </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- TAB 3: CONFIGURACIÓN (PERFIL ECONÓMICO, SALARIO, REQUISITOS, ZONAS Y PESOS) -->
-      <div id="tab-weights" class="tab-content">
-        <div class="weights-panel">
-          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; border-bottom:1px solid var(--border); padding-bottom:16px;">
-            <div>
-              <h2 style="font-size:1.15rem; color:var(--text);">Configuración de Perfil Económico, Requisitos, Barrios y Ponderaciones</h2>
-              <p style="color:var(--text-muted); font-size:0.84rem;">
-                Edita tu salario neto, cuota máxima mensual (ej. 700 €/mes), ahorro disponible, condiciones hipotecarias, puntos por barrio y pesos de cada criterio. El recálculo es inmediato sobre SQLite (0 tokens).
-              </p>
-            </div>
-            <button class="btn-primary" onclick="saveWeights()">Guardar configuración y recalcular</button>
-          </div>
-
-          <h3 style="margin-top:20px; font-size:0.86rem; color:var(--primary); text-transform:uppercase; letter-spacing:0.04em;">
-            1. Perfil Económico, Salario, Hipoteca y Requisitos Mínimos
-          </h3>
-          <p style="font-size:0.8rem; color:var(--text-muted); margin-top:4px;">
-            Estos parámetros gobiernan el cálculo de la cuota mensual hipotecaria, la entrada necesaria, los impuestos en Aragón y las alertas de esfuerzo financiero de todas las viviendas.
-          </p>
-          <div class="fin-config-grid" id="financials-config-container"></div>
-
-          <h3 style="margin-top:28px; font-size:0.86rem; color:var(--primary); text-transform:uppercase; letter-spacing:0.04em;">
-            2. Puntuación Base por Barrio (10 / 7.8 / 5.5 / 3.5 puntos)
-          </h3>
-          <p style="font-size:0.8rem; color:var(--text-muted); margin-top:4px;">
-            Asigna a cada barrio de Zaragoza uno de los 4 niveles de puntos (10, 7.8, 5.5 o 3.5) y pulsa «Guardar configuración y recalcular».
-          </p>
-          <div class="zone-selector-grid" id="zone-selectors-container"></div>
-
-          <h3 style="margin-top:28px; font-size:0.86rem; color:var(--primary); text-transform:uppercase; letter-spacing:0.04em;">
-            3. Pesos de los 13 Factores de Valoración (Escala 1 a 10)
-          </h3>
-          <div class="weight-slider-grid" id="weights-sliders-container"></div>
-
-          <h3 style="margin-top:28px; font-size:0.86rem; color:var(--primary); text-transform:uppercase; letter-spacing:0.04em;">
-            4. Bonificaciones Fijas y Penalización por Agencia (Puntos Directos)
-          </h3>
-          <div class="weight-slider-grid" id="bonuses-sliders-container" style="margin-top:12px;"></div>
-
-          <div style="margin-top:24px; padding-top:16px; border-top:1px solid var(--border); display:flex; justify-content:flex-end;">
-            <button class="btn-primary" onclick="saveWeights()">Guardar configuración y recalcular</button>
           </div>
         </div>
       </div>
@@ -1386,6 +1360,62 @@
         <div style="display:flex; gap:8px; align-items:center;" id="detail-prev-next"></div>
       </div>
       <div id="property-detail-content"></div>
+    </div>
+
+    <!-- VISTA 3: PANTALLA INDEPENDIENTE DE CONFIGURACIÓN (#/configuracion) -->
+    <div id="view-config">
+      <div class="detail-topbar">
+        <button class="btn-secondary" onclick="closeConfigView()">Volver al panel principal</button>
+        <span style="font-size:0.82rem; color:var(--text-muted); font-weight:500;">
+          Configuración General del Perfil · Recálculo instantáneo sobre SQLite (0 tokens)
+        </span>
+      </div>
+
+      <div class="weights-panel">
+        <div style="border-bottom:1px solid var(--border); padding-bottom:16px;">
+          <h2 style="font-size:1.15rem; color:var(--text);">Configuración de Perfil Económico, Requisitos, Barrios y Ponderaciones</h2>
+          <p style="color:var(--text-muted); font-size:0.84rem; margin-top:4px;">
+            Edita tu salario neto, cuota máxima mensual (ej. 700 €/mes), ahorro disponible, condiciones hipotecarias, puntos por barrio y pesos de cada criterio.
+          </p>
+        </div>
+
+        <h3 style="margin-top:20px; font-size:0.86rem; color:var(--primary); text-transform:uppercase; letter-spacing:0.04em;">
+          1. Perfil Económico, Salario, Hipoteca y Requisitos Mínimos
+        </h3>
+        <p style="font-size:0.8rem; color:var(--text-muted); margin-top:4px;">
+          Estos parámetros gobiernan el cálculo de la cuota mensual hipotecaria, la entrada necesaria, los impuestos en Aragón y las alertas de esfuerzo financiero de todas las viviendas.
+        </p>
+        <div class="fin-config-grid" id="financials-config-container"></div>
+
+        <h3 style="margin-top:28px; font-size:0.86rem; color:var(--primary); text-transform:uppercase; letter-spacing:0.04em;">
+          2. Puntuación Base por Barrio (10 / 7.8 / 5.5 / 3.5 puntos)
+        </h3>
+        <p style="font-size:0.8rem; color:var(--text-muted); margin-top:4px;">
+          Asigna a cada barrio de Zaragoza uno de los 4 niveles de puntos (10, 7.8, 5.5 o 3.5).
+        </p>
+        <div class="zone-selector-grid" id="zone-selectors-container"></div>
+
+        <h3 style="margin-top:28px; font-size:0.86rem; color:var(--primary); text-transform:uppercase; letter-spacing:0.04em;">
+          3. Pesos de los 13 Factores de Valoración (Escala 1 a 10)
+        </h3>
+        <div class="weight-slider-grid" id="weights-sliders-container"></div>
+
+        <h3 style="margin-top:28px; font-size:0.86rem; color:var(--primary); text-transform:uppercase; letter-spacing:0.04em;">
+          4. Bonificaciones Fijas y Penalización por Agencia (Puntos Directos)
+        </h3>
+        <div class="weight-slider-grid" id="bonuses-sliders-container" style="margin-top:12px;"></div>
+      </div>
+
+      <!-- BARRA INFERIOR QUE ACOMPAÑA EL SCROLL ABAJO -->
+      <div class="config-sticky-save-bar">
+        <div style="font-size:0.83rem; color:var(--text-secondary);">
+          <strong>Ajusta los parámetros a tu medida:</strong> esta barra te acompaña en la parte inferior mientras haces scroll.
+        </div>
+        <div style="display:flex; gap:10px; align-items:center;">
+          <button class="btn-secondary" onclick="closeConfigView()">Volver al panel principal</button>
+          <button class="btn-primary" onclick="saveWeights()">Guardar configuración y recalcular</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1512,12 +1542,27 @@
     function handleHashRoute() {
       if (!APP_STATE) return;
       const hash = window.location.hash || '';
+      const headerCfgBtn = document.getElementById('btn-header-config');
+
       if (hash.startsWith('#/piso/')) {
         const propId = decodeURIComponent(hash.replace('#/piso/', ''));
+        document.getElementById('view-config').classList.remove('active');
+        if (headerCfgBtn) headerCfgBtn.classList.remove('btn-map-active');
         renderPropertyDetailPage(propId);
+      } else if (hash === '#/configuracion') {
+        document.getElementById('view-main-dashboard').style.display = 'none';
+        document.getElementById('view-property-detail').classList.remove('active');
+        document.getElementById('view-config').classList.add('active');
+        if (headerCfgBtn) headerCfgBtn.classList.add('btn-map-active');
       } else {
         document.getElementById('view-property-detail').classList.remove('active');
+        document.getElementById('view-config').classList.remove('active');
         document.getElementById('view-main-dashboard').style.display = 'block';
+        if (headerCfgBtn) headerCfgBtn.classList.remove('btn-map-active');
+        const mapTab = document.getElementById('tab-map');
+        if (mapTab && mapTab.classList.contains('active')) {
+          ensureMapInitialized();
+        }
       }
     }
 
@@ -1528,6 +1573,20 @@
 
     function closePropertyDetail() {
       window.location.hash = '#/';
+    }
+
+    function toggleConfigView() {
+      if (window.location.hash === '#/configuracion') {
+        window.location.hash = '#/';
+      } else {
+        window.location.hash = '#/configuracion';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }
+
+    function closeConfigView() {
+      window.location.hash = '#/';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     function renderAll() {
@@ -1771,6 +1830,7 @@
       }
 
       document.getElementById('view-main-dashboard').style.display = 'none';
+      document.getElementById('view-config').classList.remove('active');
       const detailView = document.getElementById('view-property-detail');
       detailView.classList.add('active');
 
@@ -2619,7 +2679,7 @@
     }
 
     function switchTab(tabName, btnEl) {
-      if (window.location.hash && window.location.hash.startsWith('#/piso/')) {
+      if (window.location.hash && (window.location.hash.startsWith('#/piso/') || window.location.hash === '#/configuracion')) {
         closePropertyDetail();
       }
       document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -2631,11 +2691,6 @@
       const matchingBtn = btnEl || document.querySelector(`.tab-btn[data-tab="${tabName}"]`);
       if (matchingBtn) matchingBtn.classList.add('active');
 
-      const headerCfgBtn = document.getElementById('btn-header-config');
-      if (headerCfgBtn) {
-        headerCfgBtn.classList.toggle('btn-map-active', tabName === 'weights');
-      }
-
       const filtersBar = document.getElementById('shared-filters-bar');
       if (filtersBar) {
         filtersBar.style.display = (tabName === 'ranking' || tabName === 'map') ? 'flex' : 'none';
@@ -2643,14 +2698,6 @@
 
       if (tabName === 'map') {
         ensureMapInitialized();
-      }
-    }
-
-    function openTabFromHeader(tabName) {
-      switchTab(tabName);
-      const navEl = document.querySelector('.nav-tabs');
-      if (navEl) {
-        navEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }
     }
 
