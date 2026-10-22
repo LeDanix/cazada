@@ -1,6 +1,6 @@
 {
   "profile_name": "Comprador Joven Zaragoza (<35 años) - Eficiencia & Reforma Inteligente",
-  "updated_at": "2026-10-21 12:25",
+  "updated_at": "2026-10-22 09:35",
   "financials": {
     "age_under_35": true,
     "net_monthly_income_eur": 2100.0,
@@ -108,7 +108,14 @@
         "Oliver",
         "San Pablo",
         "Torrero",
-        "Valdefierro",
+        "Valdefierro"
+      ]
+    },
+    "x0": {
+      "multiplier": 1.0,
+      "base_score_10": 1.0,
+      "label": "Pueblos y Barrios Rurales (1.0 punto)",
+      "neighborhoods": [
         "Casetas",
         "Villarrapa",
         "Garrapinillos",
@@ -116,20 +123,23 @@
         "Montañana",
         "Movera",
         "Juslibol",
+        "Alfocea",
+        "Peñaflor",
+        "San Juan de Mozarrifar",
         "Barrios Rurales"
       ]
     }
   },
   "scoring_factors_1_to_10": {
     "price_and_total_roi": {
-      "name": "Precio y Rentabilidad Post-Reforma",
+      "name": "Precio y Ahorro Post-Reforma",
       "weight": 5.0,
       "description": "Descuento €/m² respecto a su barrio y ahorro del Coste Total (Compra + Reforma) frente a pisos ya reformados. Premia pisos <135.000€ con alto margen de mejora."
     },
     "neighborhood_tier": {
-      "name": "Valoración de Zona por Barrio (10 / 7.8 / 5.5 / 3.5 pts)",
+      "name": "Valoración de Zona por Barrio (10 / 7.8 / 5.5 / 3.5 / 1.0 pts)",
       "weight": 4.0,
-      "description": "Puntuación asignada directamente al barrio en tu configuración de zonas (10, 7.8, 5.5 o 3.5 puntos)."
+      "description": "Puntuación asignada directamente al barrio o pueblo en tu configuración de zonas (10, 7.8, 5.5, 3.5 o 1.0 puntos)."
     },
     "street_microlocation": {
       "name": "Micro-localización por Calle",
@@ -154,7 +164,7 @@
     "terrace_and_green_areas": {
       "name": "Terraza y Vistas a Zona Verde",
       "weight": 3.0,
-      "description": "Presencia de terraza usable y puntuación extra si tiene vistas despejadas a parque o arbolado."
+      "description": "Presencia de terraza usable (o bajo/casa en pueblo) y puntuación extra si tiene cercanía o vistas despejadas a parque o arbolado."
     },
     "condition_and_reform_viability": {
       "name": "Estado Interior y Viabilidad de Reforma (Cocina/Baño/Eficiencia)",
@@ -192,6 +202,7 @@
     "storage_room_points": 3.0,
     "penthouse_solarium_points": 4.0,
     "agency_penalty_points": -5.0,
-    "agency_no_fee_penalty_points": 0.0
+    "agency_no_fee_penalty_points": 0.0,
+    "pueblo_penalty_points": -15.0
   }
 }

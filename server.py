@@ -153,6 +153,8 @@ def format_row_for_frontend(r: sqlite3.Row, profile: dict | None = None) -> dict
         badges.append("Con terraza")
     elif is_pueblo:
         badges.append("En pueblo (Bajo = terraza)")
+    if is_pueblo:
+        badges.append(f"Pueblo / Barrio Rural ({int(bonuses.get('pueblo_penalty_points', -15))} pts)")
     if fin.get("fits_monthly_limit_700"):
         badges.append(f"Cuota {fin.get('monthly_mortgage_eur', 0):.0f} €/mes (≤{max_quota_cfg} €)")
 
@@ -517,9 +519,9 @@ class ZgzHouseFinderHandler(BaseHTTPRequestHandler):
                 zm = profile.get("zone_multipliers", {})
                 # Remove reassigned neighborhoods from all tiers first, then place into target tier
                 for nb_name, target_tier in body["zone_assignments"].items():
-                    if target_tier not in ("x4", "x3", "x2", "x1"):
+                    if target_tier not in ("x4", "x3", "x2", "x1", "x0"):
                         continue
-                    for t_key in ("x4", "x3", "x2", "x1"):
+                    for t_key in ("x4", "x3", "x2", "x1", "x0"):
                         if t_key in zm and "neighborhoods" in zm[t_key]:
                             zm[t_key]["neighborhoods"] = [
                                 n for n in zm[t_key]["neighborhoods"] if n.lower() != nb_name.lower()
@@ -529,7 +531,7 @@ class ZgzHouseFinderHandler(BaseHTTPRequestHandler):
                         # If user moves Pinares de Venecia or Parque Venecia, keep Venecia aliases synced
                         if nb_name.lower() in ("pinares de venecia", "parque venecia", "venecia"):
                             for alias in ("Pinares de Venecia", "Parque Venecia", "Venecia"):
-                                for t_key in ("x4", "x3", "x2", "x1"):
+                                for t_key in ("x4", "x3", "x2", "x1", "x0"):
                                     zm[t_key]["neighborhoods"] = [
                                         n for n in zm[t_key]["neighborhoods"] if n.lower() != alias.lower()
                                     ]

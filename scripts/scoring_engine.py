@@ -296,7 +296,7 @@ def classify_neighborhood(
     zm = profile["zone_multipliers"]
 
     def find_nb_tier(target_nb: str) -> Optional[Tuple[str, float, float, str]]:
-        for t_key in ["x4", "x3", "x2", "x1"]:
+        for t_key in ["x4", "x3", "x2", "x1", "x0"]:
             t_data = zm.get(t_key, {})
             for nb in t_data.get("neighborhoods", []):
                 if nb.lower() == target_nb.lower():
@@ -310,36 +310,36 @@ def classify_neighborhood(
 
     if "villarrapa" in combined or "casetas" in combined:
         if "villarrapa" in combined and ("50692" in combined or (has_valid_gps and float(lat) > 41.73)):
-            res = find_nb_tier("Villarrapa") or find_nb_tier("Casetas") or ("x1", 3.5, 3.5, "Villarrapa")
+            res = find_nb_tier("Villarrapa") or find_nb_tier("Casetas") or ("x0", 1.0, 1.0, "Villarrapa")
             return res[0], res[1], res[2], "Villarrapa"
         if "casetas" in combined and (not has_valid_gps or float(lat) <= 41.73):
-            res = find_nb_tier("Casetas") or ("x1", 3.5, 3.5, "Casetas")
+            res = find_nb_tier("Casetas") or ("x0", 1.0, 1.0, "Casetas")
             return res[0], res[1], res[2], "Casetas"
     if "alfocea" in combined:
-        res = find_nb_tier("Barrios Rurales") or ("x1", 3.5, 3.5, "Alfocea")
+        res = find_nb_tier("Alfocea") or find_nb_tier("Barrios Rurales") or ("x0", 1.0, 1.0, "Alfocea")
         return res[0], res[1], res[2], "Alfocea"
     if "san mateo de gállego" in combined or "san mateo de gallego" in combined:
-        res = find_nb_tier("Barrios Rurales") or ("x1", 3.5, 3.5, "San Mateo de Gállego")
+        res = find_nb_tier("Barrios Rurales") or ("x0", 1.0, 1.0, "San Mateo de Gállego")
         return res[0], res[1], res[2], "San Mateo de Gállego"
     if "montañana" in combined or "montanana" in combined or "peñaflor" in combined or "penaflor" in combined:
         if ("peñaflor" in combined or "penaflor" in combined) and (has_valid_gps and float(lat) > 41.725):
-            res = find_nb_tier("Barrios Rurales") or ("x1", 3.5, 3.5, "Peñaflor")
+            res = find_nb_tier("Peñaflor") or find_nb_tier("Barrios Rurales") or ("x0", 1.0, 1.0, "Peñaflor")
             return res[0], res[1], res[2], "Peñaflor"
         if "montañana" in combined or "montanana" in combined:
-            res = find_nb_tier("Montañana") or ("x1", 3.5, 3.5, "Montañana")
+            res = find_nb_tier("Montañana") or ("x0", 1.0, 1.0, "Montañana")
             return res[0], res[1], res[2], "Montañana"
         if not has_valid_gps or dist_center_m > 5800:
-            res = find_nb_tier("Barrios Rurales") or ("x1", 3.5, 3.5, "Peñaflor")
+            res = find_nb_tier("Peñaflor") or find_nb_tier("Barrios Rurales") or ("x0", 1.0, 1.0, "Peñaflor")
             return res[0], res[1], res[2], "Peñaflor"
 
     if has_valid_gps and dist_center_m > 5800:
         for p_name in ["Casetas", "Villarrapa", "Garrapinillos", "Monzalbarba", "Alfocea", "Juslibol", "Montañana", "Peñaflor", "Movera", "San Juan de Mozarrifar", "San Mateo de Gállego"]:
             if p_name.lower() in combined:
-                res = find_nb_tier(p_name) or find_nb_tier("Barrios Rurales") or ("x1", 3.5, 3.5, p_name)
+                res = find_nb_tier(p_name) or find_nb_tier("Barrios Rurales") or ("x0", 1.0, 1.0, p_name)
                 return res[0], res[1], res[2], p_name
         near_nb, near_dist = nearest_poi(float(lat), float(lon), BARRIO_AND_PUEBLO_CENTERS_GPS)
         if near_nb and near_dist is not None and near_dist <= 4500:
-            res = find_nb_tier(near_nb) or find_nb_tier("Barrios Rurales") or ("x1", 3.5, 3.5, near_nb)
+            res = find_nb_tier(near_nb) or find_nb_tier("Barrios Rurales") or ("x0", 1.0, 1.0, near_nb)
             return res[0], res[1], res[2], near_nb
 
     # 1. Si la dirección/calle menciona explícitamente calles de La Paz o Torrero, asignar a La Paz
@@ -349,9 +349,9 @@ def classify_neighborhood(
             return res
 
     # 2. Primero buscar coincidencia exacta en la dirección o título específico
-    for tier_key in ["x4", "x3", "x2", "x1"]:
-        tier_data = zm[tier_key]
-        for nb in tier_data["neighborhoods"]:
+    for tier_key in ["x4", "x3", "x2", "x1", "x0"]:
+        tier_data = zm.get(tier_key, {})
+        for nb in tier_data.get("neighborhoods", []):
             if nb.lower() in specific_low:
                 return tier_key, float(tier_data["multiplier"]), float(tier_data["base_score_10"]), nb
 
@@ -362,9 +362,9 @@ def classify_neighborhood(
             return res
 
     # 4. Búsqueda general en barrio + dirección + título + URL
-    for tier_key in ["x4", "x3", "x2", "x1"]:
-        tier_data = zm[tier_key]
-        for nb in tier_data["neighborhoods"]:
+    for tier_key in ["x4", "x3", "x2", "x1", "x0"]:
+        tier_data = zm.get(tier_key, {})
+        for nb in tier_data.get("neighborhoods", []):
             if nb.lower() in combined:
                 return tier_key, float(tier_data["multiplier"]), float(tier_data["base_score_10"]), nb
 
@@ -391,7 +391,7 @@ def classify_neighborhood(
             if res:
                 return res
             if near_nb.lower() in PUEBLO_NAMES_SET:
-                base_r = find_nb_tier("Barrios Rurales") or ("x1", 3.5, 3.5, near_nb)
+                base_r = find_nb_tier("Barrios Rurales") or ("x0", 1.0, 1.0, near_nb)
                 return base_r[0], base_r[1], base_r[2], near_nb
 
     return "x2", 5.5, 5.5, neighborhood_text or "Zaragoza Capital"
@@ -1062,13 +1062,13 @@ def score_listing(listing: Dict[str, Any], profile: Optional[Dict[str, Any]] = N
     s_noise = 6.0
     noise_status = "no_especificado"
     if is_pueblo:
-        s_noise += 1.8
+        s_noise += 0.5
         noise_status = "verificado"
-        noise_parts.append(f"Ubicación en pueblo/barrio rural ({matched_nb}) sin tráfico denso (+1.8)")
+        noise_parts.append(f"Ubicación en pueblo/barrio rural ({matched_nb}) con menor tráfico (+0.5)")
     if any(k in desc for k in ["zona tranquila", "calle tranquila", "muy tranquilo", "peatonal", "sin ruidos", "silencioso", "junto al parque"]):
-        s_noise += 1.5 if is_pueblo else 2.0
+        s_noise += 1.0 if is_pueblo else 2.0
         noise_status = "verificado"
-        noise_parts.append(f"Anuncio destaca calle tranquila / peatonal / junto a parque (+{1.5 if is_pueblo else 2.0})")
+        noise_parts.append(f"Anuncio destaca calle tranquila / peatonal / junto a parque (+{1.0 if is_pueblo else 2.0})")
     if floor_num is not None and floor_num >= 4:
         s_noise += 1.0
         noise_status = "verificado"
@@ -1089,8 +1089,8 @@ def score_listing(listing: Dict[str, Any], profile: Optional[Dict[str, Any]] = N
     # 13. Carril Bici, Tranvía/Bus y Aparcamiento (1-10)
     mob_parts = []
     if is_pueblo:
-        s_mobility = 7.2
-        mob_parts.append(f"Fácil aparcamiento exterior gratuito en {matched_nb} + conexión bus metropolitano/autovía (7.2)")
+        s_mobility = 3.5
+        mob_parts.append(f"Pueblo/barrio rural ({matched_nb}) alejado del centro de Zaragoza: dependencia de coche o bus interurbano (3.5)")
         mob_status = "verificado"
     elif tram_dist_m is not None:
         if tram_dist_m <= 400:
@@ -1119,7 +1119,7 @@ def score_listing(listing: Dict[str, Any], profile: Optional[Dict[str, Any]] = N
         "status": mob_status,
         "source": f"Distancia GPS a Tranvía L1: {f'{tram_dist_m} m ({tram_name})' if tram_dist_m is not None else 'Sin GPS exacto'} | Garaje: {'Sí' if has_garage else 'No'}",
         "formula": " + ".join(mob_parts),
-        "detail": "Calculado por facilidad de aparcamiento, distancia geodésica a paradas de transporte y disponibilidad de garaje.",
+        "detail": "Calculado por conexión con el núcleo urbano de Zaragoza, distancia geodésica a paradas de transporte y disponibilidad de garaje.",
     }
 
     scores_1_to_10 = {k: v["score"] for k, v in audit_evidence.items()}
@@ -1148,10 +1148,12 @@ def score_listing(listing: Dict[str, Any], profile: Optional[Dict[str, Any]] = N
     else:
         agency_modifier = 0.0
 
-    # Impacto directo del nivel de zona (10, 7.8, 5.5, 3.5) para que una zona de 3.5 pts no supere a una de 10 pts por tener garaje
+    pueblo_penalty = float(bonuses_cfg.get("pueblo_penalty_points", -15.0)) if is_pueblo else 0.0
+
+    # Impacto directo del nivel de zona (10, 7.8, 5.5, 3.5, 1.0) para que una zona periférica o pueblo no supere a una preferente por tener extras
     zone_direct_impact = round((s_zone - 6.0) * 1.8, 1)
 
-    total_bonuses = round(bonus_garage + bonus_storage + bonus_penthouse + agency_modifier + zone_direct_impact, 1)
+    total_bonuses = round(bonus_garage + bonus_storage + bonus_penthouse + agency_modifier + zone_direct_impact + pueblo_penalty, 1)
 
     structural_penalty = 0.0
     if not has_elevator:
@@ -1177,6 +1179,7 @@ def score_listing(listing: Dict[str, Any], profile: Optional[Dict[str, Any]] = N
             "storage_room_points": bonus_storage,
             "penthouse_solarium_points": bonus_penthouse,
             "agency_penalty_points": agency_modifier,
+            "pueblo_penalty_points": pueblo_penalty,
             "zone_direct_impact": zone_direct_impact,
             "structural_penalty": structural_penalty,
             "total_bonuses": total_bonuses,

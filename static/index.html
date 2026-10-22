@@ -418,6 +418,7 @@
     .z-x3 { background: var(--success-bg); color: var(--success); }
     .z-x2 { background: var(--warning-bg); color: var(--warning); }
     .z-x1 { background: var(--danger-bg); color: var(--danger); }
+    .z-x0 { background: #F1F5F9; color: #64748B; border: 1px solid #CBD5E1; }
 
     .score-floating {
       padding: 5px 10px;
@@ -2506,9 +2507,9 @@
 
       syncSalaryDebtPreview();
 
-      // 1. Renderizar Selector de Puntos por Barrio (10, 7.8, 5.5, 3.5)
+      // 1. Renderizar Selector de Puntos por Barrio (10, 7.8, 5.5, 3.5, 1.0)
       const allNeighborhoods = [];
-      ['x4', 'x3', 'x2', 'x1'].forEach(tierKey => {
+      ['x4', 'x3', 'x2', 'x1', 'x0'].forEach(tierKey => {
         const list = (zm[tierKey] && zm[tierKey].neighborhoods) || [];
         list.forEach(nb => {
           if (nb === 'Venecia') return;
@@ -2525,7 +2526,8 @@
             <option value="x4" ${item.tier === 'x4' ? 'selected' : ''}>10 puntos (Preferente)</option>
             <option value="x3" ${item.tier === 'x3' ? 'selected' : ''}>7.8 puntos (Media-Alta)</option>
             <option value="x2" ${item.tier === 'x2' ? 'selected' : ''}>5.5 puntos (Media)</option>
-            <option value="x1" ${item.tier === 'x1' ? 'selected' : ''}>3.5 puntos (Económica)</option>
+            <option value="x1" ${item.tier === 'x1' ? 'selected' : ''}>3.5 puntos (Económica Urbana)</option>
+            <option value="x0" ${item.tier === 'x0' ? 'selected' : ''}>1.0 punto (Pueblo / Barrio Rural)</option>
           </select>
         </div>
       `).join('');
@@ -2550,12 +2552,13 @@
         storage_room_points: 'Puntos extra por Trastero',
         penthouse_solarium_points: 'Puntos extra por Ático / Solárium',
         agency_penalty_points: 'Penalización por Agencia con comisión (negativo)',
-        agency_no_fee_penalty_points: 'Penalización por Agencia sin comisión comprador (negativo)'
+        agency_no_fee_penalty_points: 'Penalización por Agencia sin comisión comprador (negativo)',
+        pueblo_penalty_points: 'Penalización por ubicación en Pueblo / Barrio Rural lejano (negativo)'
       };
 
       document.getElementById('bonuses-sliders-container').innerHTML = Object.entries(bonuses).map(([bk, bval]) => {
-        const isNeg = bk.includes('agency');
-        const minVal = isNeg ? -30 : 0;
+        const isNeg = bk.includes('agency') || bk.includes('pueblo');
+        const minVal = isNeg ? -35 : 0;
         const maxVal = isNeg ? 0 : 25;
         return `
           <div class="weight-control">
@@ -2620,7 +2623,7 @@
     function renderNeighborhoodsRef() {
       const ref = APP_STATE.neighborhoods_ref;
       const zm = APP_STATE.profile.zone_multipliers;
-      const groups = ['x4', 'x3', 'x2', 'x1'];
+      const groups = ['x4', 'x3', 'x2', 'x1', 'x0'].filter(g => zm[g]);
 
       document.getElementById('neighborhoods-grid').innerHTML = groups.map(g => {
         const gdata = zm[g];
