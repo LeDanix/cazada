@@ -1281,7 +1281,7 @@
 
       <div class="nav-tabs">
         <button class="tab-btn active" id="tab-btn-ranking" data-tab="ranking" onclick="switchTab('ranking', this)">Catálogo de Viviendas</button>
-        <button class="tab-btn" id="tab-btn-chollos" data-tab="chollos" onclick="switchTab('chollos', this)">Chollos / Para Invertir</button>
+        <button class="tab-btn" id="tab-btn-chollos" data-tab="chollos" onclick="switchTab('chollos', this)">Chollos</button>
         <button class="tab-btn" id="tab-btn-map" data-tab="map" onclick="switchTab('map', this)">Mapa</button>
         <button class="tab-btn" id="tab-btn-neighborhoods" data-tab="neighborhoods" onclick="switchTab('neighborhoods', this)">Tabla de Barrios Zaragoza</button>
         <button class="tab-btn" id="tab-btn-guide" data-tab="guide" onclick="switchTab('guide', this)">Guía Financiera e ITP Aragón</button>
@@ -1348,24 +1348,24 @@
         <div id="properties-list" class="property-grid"></div>
       </div>
 
-      <!-- TAB 1B: CHOLLOS / PARA INVERTIR (VIVIENDAS MÁS BARATAS Y DE REFORMA) -->
+      <!-- TAB 1B: CHOLLOS (VIVIENDAS MÁS BARATAS Y DE REFORMA PARA VIVIR) -->
       <div id="tab-chollos" class="tab-content">
         <div class="chollos-banner">
           <div>
             <div style="font-size:0.94rem; font-weight:700; color:var(--primary);" id="chollos-banner-title">
-              Chollos y Viviendas para Invertir en Reforma
+              Chollos y Viviendas Económicas para Reformar a tu Gusto
             </div>
             <div style="font-size:0.8rem; color:var(--text-muted); margin-top:3px;" id="chollos-banner-sub">
-              Inmuebles de precio base reducido donde invertir capital propio en reforma o actualización genera ahorro mensual y plusvalía patrimonial.
+              Pisos de precio base reducido donde hacer una reforma o actualización a tu medida sale más a cuenta que comprar ya reformado.
             </div>
           </div>
           <div style="display:flex; align-items:center; gap:10px;">
             <label for="chollos-sort" style="font-size:0.74rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em;">Ordenar por</label>
             <select id="chollos-sort" onchange="renderProperties()" style="padding:7px 11px; font-size:0.8rem; font-weight:600;">
               <option value="score">Mayor puntuación global</option>
-              <option value="equity">Mayor plusvalía neta tras reforma</option>
+              <option value="equity">Mayor ahorro frente a piso reformado</option>
               <option value="price_asc">Menor precio base de compra</option>
-              <option value="total_asc">Menor inversión total (c/gastos y reforma)</option>
+              <option value="total_asc">Menor coste total (c/gastos y reforma)</option>
             </select>
           </div>
         </div>
@@ -1666,7 +1666,7 @@
       const estReform = evFin.estimated_reform_eur || 0;
       const netEquity = evFin.net_equity_gain_eur || 0;
       // Incluye viviendas económicas <= tope Estrategia Reforma (135k € por defecto)
-      // y viviendas hasta +15k € adicionales que requieran invertir capital en reforma (>= 10k €) con plusvalía positiva
+      // y viviendas hasta +15k € adicionales para reformar (>= 10k €) cuyo coste final sea inferior a comprar ya reformado
       return (p.price <= sweetSpotPrice) || (p.price <= sweetSpotPrice + 15000 && estReform >= 10000 && netEquity > 0);
     }
 
@@ -1681,9 +1681,14 @@
         ? ((fin.max_monthly_mortgage_eur / fin.net_monthly_income_eur) * 100).toFixed(1).replace('.0', '')
         : '33';
 
+      const rankingTabBtn = document.getElementById('tab-btn-ranking');
+      if (rankingTabBtn) {
+        rankingTabBtn.textContent = `Catálogo de Viviendas (${props.length})`;
+      }
+
       const chollosTabBtn = document.getElementById('tab-btn-chollos');
       if (chollosTabBtn) {
-        chollosTabBtn.textContent = `Chollos / Para Invertir (${chollosDeals.length})`;
+        chollosTabBtn.textContent = `Chollos (${chollosDeals.length})`;
       }
 
       const kpis = [
@@ -1704,9 +1709,9 @@
           sub: `${props.length - particulares.length} de agencia (penalizados en puntos)`
         },
         {
-          label: `Chollos / Para Invertir`,
+          label: `Chollos`,
           value: `${chollosDeals.length} viviendas`,
-          sub: `Hasta ${fmtEur(sweetSpotPrice)} o reforma con plusvalía (ver pestaña)`,
+          sub: `Hasta ${fmtEur(sweetSpotPrice)} o para reformar a tu gusto (ver pestaña)`,
           onclick: `switchTab('chollos')`
         },
         {
@@ -1818,9 +1823,9 @@
 
       const cholloStripHtml = isCholloCard ? `
         <div class="chollos-meta-strip">
-          <span>Capital reforma est.: <strong style="color:var(--primary);">${fmtEur(fin.estimated_reform_eur)}</strong> (${fin.reform_type || 'Actualización'})</span>
+          <span>Reforma est.: <strong style="color:var(--primary);">${fmtEur(fin.estimated_reform_eur)}</strong> (${fin.reform_type || 'Actualización'})</span>
           <span style="font-weight:700; color:${fin.net_equity_gain_eur >= 0 ? 'var(--success)' : 'var(--text-secondary)'};">
-            Plusvalía: ${fin.net_equity_gain_eur >= 0 ? '+' : ''}${fmtEur(fin.net_equity_gain_eur)}
+            Ahorro vs reformado: ${fin.net_equity_gain_eur >= 0 ? '+' : ''}${fmtEur(fin.net_equity_gain_eur)}
           </span>
         </div>
       ` : '';
@@ -1917,6 +1922,15 @@
       LAST_CHOLLOS_IDS = chollos.map(p => p.id);
       CURRENT_FILTERED_IDS = ACTIVE_MAIN_TAB === 'chollos' ? LAST_CHOLLOS_IDS : LAST_RANKING_IDS;
 
+      const rankingTabBtn = document.getElementById('tab-btn-ranking');
+      if (rankingTabBtn) {
+        rankingTabBtn.textContent = `Catálogo de Viviendas (${filtered.length})`;
+      }
+      const chollosTabBtn = document.getElementById('tab-btn-chollos');
+      if (chollosTabBtn) {
+        chollosTabBtn.textContent = `Chollos (${chollos.length})`;
+      }
+
       if (MAP_INSTANCE) {
         updateMapMarkers(ACTIVE_MAIN_TAB === 'chollos' ? chollos : filtered);
       }
@@ -1934,15 +1948,15 @@
       const bannerTitle = document.getElementById('chollos-banner-title');
       const bannerSub = document.getElementById('chollos-banner-sub');
       if (bannerTitle) {
-        bannerTitle.textContent = `Chollos y Viviendas para Invertir Capital (${chollos.length} disponibles con los filtros actuales)`;
+        bannerTitle.textContent = `Chollos y Viviendas Económicas para Reformar a tu Gusto (${chollos.length} disponibles)`;
       }
       if (bannerSub) {
-        bannerSub.textContent = `Incluye pisos económicos de hasta ${fmtEur(sweetSpotPrice)} (Estrategia Reforma) e inmuebles de hasta ${fmtEur(sweetSpotPrice + 15000)} que requieren inversión en reforma con plusvalía neta positiva.`;
+        bannerSub.textContent = `Incluye pisos económicos de hasta ${fmtEur(sweetSpotPrice)} (Estrategia Reforma) y viviendas de hasta ${fmtEur(sweetSpotPrice + 15000)} donde hacer reforma para entrar a vivir sale más barato que comprar un piso ya reformado.`;
       }
 
       if (chollosContainer) {
         if (!chollos.length) {
-          chollosContainer.innerHTML = `<div class="weights-panel" style="grid-column:1/-1;text-align:center;color:var(--text-muted);">No hay chollos o viviendas de inversión que coincidan con los filtros seleccionados.</div>`;
+          chollosContainer.innerHTML = `<div class="weights-panel" style="grid-column:1/-1;text-align:center;color:var(--text-muted);">No hay chollos que coincidan con los filtros seleccionados.</div>`;
         } else {
           chollosContainer.innerHTML = chollos.map((p, idx) => buildPropertyCardHtml(p, idx, true)).join('');
         }
@@ -2108,7 +2122,7 @@
                     <strong>${fmtEur(fin.estimated_reform_eur)}</strong>
                   </div>
                   <div class="detail-fin-row" style="border-top:1px solid var(--border); margin-top:4px; padding-top:8px;">
-                    <span style="font-weight:700; color:var(--text);">Inversión Total Llave en Mano:</span>
+                    <span style="font-weight:700; color:var(--text);">Coste Total Llave en Mano:</span>
                     <strong style="font-size:0.98rem; color:var(--primary);">${fmtEur(fin.total_investment_eur)}</strong>
                   </div>
                   <div class="detail-fin-row">

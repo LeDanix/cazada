@@ -125,10 +125,10 @@ Cada anuncio se clasifica determinísticamente cruzando:
 3. **Comisión de Agencia Inmobiliaria (`agency_fee_eur`)**:
    - **Particular** o **Agencia exenta de honorarios al comprador**: **$0\text{ €}$**.
    - **Agencia estándar**: **3% + IVA ($3,63\%$)** sobre el precio de venta, con un mínimo de **$3.630\text{ €}$**.
-4. **Inversión Total del Proyecto (`total_project_cost_eur`)**:
-   $$\text{Inversión Total} = \text{Precio Compra} + \text{ITP y Notaría} + \text{Comisión Agencia} + \text{Reforma Estimada}$$
-5. **Valor de Mercado Post-Reforma y Plusvalía Latente (`net_equity_gain_eur`)**:
-   $$\text{Plusvalía Neta Estimada} = (\text{Precio Medio Reformado Barrio} \times \text{m}^2) - \text{Inversión Total}$$
+4. **Coste Total del Proyecto (`total_project_cost_eur`)**:
+   $$\text{Coste Total} = \text{Precio Compra} + \text{ITP y Notaría} + \text{Comisión Agencia} + \text{Reforma Estimada}$$
+5. **Valor de Mercado Post-Reforma y Ahorro frente a Reformado (`net_equity_gain_eur`)**:
+   $$\text{Ahorro Neto Estimado} = (\text{Precio Medio Reformado Barrio} \times \text{m}^2) - \text{Coste Total}$$
 6. **Cuota Hipotecaria Mensual a 30 Años (`monthly_mortgage_eur`)**:
    Calculada por sistema de amortización francés a 30 años ($360\text{ meses}$) al tipo TIN configurado en tu perfil (`2,75%`), verificando si cumple el límite de **$\le 700\text{ €/mes}$** (`fits_monthly_limit_700`).
 

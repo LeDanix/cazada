@@ -1,6 +1,6 @@
 {
   "profile_name": "Comprador Joven Zaragoza (<35 años) - Eficiencia & Reforma Inteligente",
-  "updated_at": "2026-10-21 08:16",
+  "updated_at": "2026-10-21 12:25",
   "financials": {
     "age_under_35": true,
     "net_monthly_income_eur": 2100.0,
@@ -19,7 +19,7 @@
     "notary_registry_appraisal_eur": 2200.0
   },
   "strategy": {
-    "primary": "Comprar barato (< 135.000 €) con buena estructura/planta/luz e invertir en reforma de eficiencia energética (ventanas Climalit/PVC, aislamiento), baño y cocina (y salón/habitaciones si sobra), siempre que el coste total final sea claramente inferior al de un piso ya reformado.",
+    "primary": "Comprar barato (< 135.000 €) con buena estructura/planta/luz y realizar reforma de eficiencia energética (ventanas Climalit/PVC, aislamiento), baño y cocina (y salón/habitaciones si sobra), siempre que el coste total final sea claramente inferior al de un piso ya reformado.",
     "secondary": "Pisos entre 135.000 € y 195.000 € que solo requieran reforma estética leve si la relación calidad/zona/precio compensa."
   },
   "hard_and_soft_requirements": {
@@ -115,22 +115,22 @@
   "scoring_factors_1_to_10": {
     "price_and_total_roi": {
       "name": "Precio y Rentabilidad Post-Reforma",
-      "weight": 4.5,
+      "weight": 5.0,
       "description": "Descuento €/m² respecto a su barrio y ahorro del Coste Total (Compra + Reforma) frente a pisos ya reformados. Premia pisos <135.000€ con alto margen de mejora."
     },
     "neighborhood_tier": {
       "name": "Valoración de Zona por Barrio (10 / 7.8 / 5.5 / 3.5 pts)",
-      "weight": 6.0,
+      "weight": 4.0,
       "description": "Puntuación asignada directamente al barrio en tu configuración de zonas (10, 7.8, 5.5 o 3.5 puntos)."
     },
     "street_microlocation": {
       "name": "Micro-localización por Calle",
-      "weight": 3.0,
+      "weight": 3.5,
       "description": "Calidad específica de la calle/tramo dentro del barrio (ej. avenidas principales, cercanía a zonas mejores, entorno consolidado)."
     },
     "size_and_layout": {
       "name": "Superficie (>70m²) y Aprovechamiento de Planta",
-      "weight": 3.5,
+      "weight": 4.0,
       "description": "Superficie útil (>60m² mínimo, >70m² ideal), salón y cocina amplios, bajo porcentaje de pasillo perdido y facilidad para unir espacios sin muros de carga."
     },
     "secondary_rooms_quality": {
@@ -150,7 +150,7 @@
     },
     "condition_and_reform_viability": {
       "name": "Estado Interior y Viabilidad de Reforma (Cocina/Baño/Eficiencia)",
-      "weight": 3.0,
+      "weight": 2.5,
       "description": "Relación entre el estado actual y el coste estimado de sanitizar baños/cocina y mejorar eficiencia."
     },
     "insulation_and_hidden_installations": {
@@ -182,8 +182,8 @@
   "fixed_bonuses": {
     "garage_points": 6.0,
     "storage_room_points": 3.0,
-    "penthouse_solarium_points": 5.0,
-    "agency_penalty_points": -10.0,
-    "agency_no_fee_penalty_points": -3.0
+    "penthouse_solarium_points": 4.0,
+    "agency_penalty_points": -5.0,
+    "agency_no_fee_penalty_points": 0.0
   }
 }
