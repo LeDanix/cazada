@@ -190,20 +190,22 @@ BARRIO_AND_PUEBLO_CENTERS_GPS = [
     ("Actur", 41.6695, -0.8895),
     ("Arrabal", 41.6605, -0.8735),
     ("Barrio Jesús", 41.6585, -0.8665),
-    ("Universidad", 41.6405, -0.8975),
+    ("Universidad", 41.6405, -0.8965),
     ("Romareda", 41.6365, -0.9035),
-    ("Centro", 41.6488, -0.8850),
-    ("Casco Histórico", 41.6552, -0.8795),
-    ("San Pablo", 41.6555, -0.8860),
-    ("Magdalena", 41.6525, -0.8725),
-    ("Delicias", 41.6495, -0.9085),
+    ("Centro", 41.6492, -0.8835),
+    ("El Gancho", 41.6572, -0.8855),
+    ("San Pablo", 41.6548, -0.8865),
+    ("Magdalena", 41.6525, -0.8735),
+    ("Delicias", 41.6505, -0.9055),
+    ("Universitas", 41.6455, -0.9055),
+    ("Los Enlaces", 41.6485, -0.9175),
     ("La Almozara", 41.6585, -0.9045),
     ("San José", 41.6385, -0.8735),
     ("Miraflores", 41.6395, -0.8780),
     ("Las Fuentes", 41.6445, -0.8645),
     ("Torrero", 41.6295, -0.8825),
     ("La Paz", 41.6255, -0.8780),
-    ("Parque Venecia", 41.6225, -0.8865),
+    ("Parque Venecia", 41.6215, -0.8865),
     ("Casablanca", 41.6315, -0.9085),
     ("Valdefierro", 41.6405, -0.9325),
     ("Oliver", 41.6515, -0.9245),
@@ -282,17 +284,59 @@ def classify_neighborhood(
     url_text: str = "",
     lat: Optional[float] = None,
     lon: Optional[float] = None,
+    description_text: str = "",
 ) -> Tuple[str, float, float, str]:
     """
     Devuelve (tier_key, multiplier, base_score_10, matched_neighborhood)
-    basado en el texto del barrio, dirección, título, URL y coordenadas GPS si la etiqueta es genérica.
+    priorizando:
+      0) Pueblos, barrios rurales y códigos postales periféricos (50120, 50190, 50194, 50620, 50692) o distancia GPS > 5.8 km.
+      1) Calles concretas (en dirección, título o descripción), micro-zonas y códigos postales específicos (ej. 50003 El Gancho/San Pablo vs 50002 Magdalena, 50012 Valdefierro vs 50011 Oliver).
+      2) Sub-barrio explícito en dirección/título (eliminando sufijos de distrito agrupado entre paréntesis como '(Torrero-La Paz)', '(Oliver-Valdefierro)', '(Casco Histórico)', '(Centro)').
+      3) Barrio general y coordenadas GPS exactas.
     """
-    nb_low = (neighborhood_text or "").lower()
-    addr_low = (address_text or "").lower()
-    title_low = (title_text or "").lower()
-    url_clean = (url_text or "").lower().replace("_", " ").replace("-", " ")
-    specific_low = f"{addr_low} {title_low}"
-    combined = f"{nb_low} {addr_low} {title_low} {url_clean}"
+    nb_low = (neighborhood_text or "").lower().strip()
+    addr_low = (address_text or "").lower().strip()
+    title_low = (title_text or "").lower().strip()
+    desc_low = (description_text or "").lower().strip()
+    url_low = (url_text or "").lower().strip()
+    url_clean = url_low.replace("_", " ").replace("-", " ")
+
+    # Eliminar sufijos de distritos amplios entre paréntesis en títulos (ej. "(Torrero-La Paz)", "(Casco Histórico)", "(Oliver-Valdefierro)", "(Santa Isabel - Movera)", "(Centro)")
+    # conservando paréntesis que contienen una calle ("(Calle Granada)") o un código postal ("(50003)").
+    title_no_district = re.sub(
+        r"\((?![^)]*(?:calle|avda|avenida|paseo|plaza|glorieta|camino|c/|50\d{3}))[^)]*\)",
+        "",
+        title_low,
+    ).strip()
+
+    specific_low = f"{addr_low} {title_no_district}".strip()
+    street_search_text = f"{addr_low} {title_no_district} {desc_low}".strip()
+
+    # Extraer código postal de Zaragoza (50XXX) si aparece en dirección, título o URL del portal
+    cp_match = re.search(r"(?:^|\D)(50\d{3})(?:\D|$)", f"{addr_low} {title_low} {url_low}")
+    postal_code = cp_match.group(1) if cp_match else ""
+
+    # Si el título/URL/dirección original del portal usa un distrito agrupado o genérico, no confiar en nb_low si fue inferido previamente
+    raw_portal_context = f"{addr_low} {title_low} {url_clean}"
+    is_compound_or_generic_portal_zone = any(
+        g in raw_portal_context
+        for g in [
+            "casco antiguo",
+            "casco histórico",
+            "casco historico",
+            "torrero la paz",
+            "torrero-la paz",
+            "oliver valdefierro",
+            "oliver-valdefierro",
+            "santa isabel - movera",
+            "santa isabel movera",
+            "casetas garrapinillos monzalbarba",
+            "ciudad jardín - parque roma",
+            "zaragoza capital",
+        ]
+    )
+    effective_nb_low = "" if is_compound_or_generic_portal_zone else nb_low
+    combined = f"{effective_nb_low} {addr_low} {title_low} {url_clean}".strip()
     zm = profile["zone_multipliers"]
 
     def find_nb_tier(target_nb: str) -> Optional[Tuple[str, float, float, str]]:
@@ -303,15 +347,39 @@ def classify_neighborhood(
                     return t_key, float(t_data["multiplier"]), float(t_data["base_score_10"]), nb
         return None
 
-    # 0. Detección prioritaria de pueblos / barrios rurales cuando las coordenadas GPS están lejos del núcleo urbano (> 5.8 km)
-    # o cuando el título/barrio menciona un pueblo específico, evitando que una calle homónima (ej. C/ San Jorge en Casetas o C/ Delicias en San Mateo) se asigne al centro.
     has_valid_gps = bool(lat and lon and abs(float(lat)) > 1 and abs(float(lon)) > 0.01)
     dist_center_m = haversine_m(float(lat), float(lon), 41.6518, -0.8808) if has_valid_gps else 0.0
 
-    if "villarrapa" in combined or "casetas" in combined:
+    # 0. Detección prioritaria de Pueblos y Barrios Rurales (por CP, sub-zona o distancia GPS > 5.8 km)
+    if postal_code == "50194" or "movera" in specific_low:
+        res = find_nb_tier("Movera") or find_nb_tier("Barrios Rurales") or ("x0", 1.0, 1.0, "Movera")
+        return res[0], res[1], res[2], "Movera"
+    if postal_code == "50120" or "monzalbarba" in specific_low:
+        res = find_nb_tier("Monzalbarba") or find_nb_tier("Barrios Rurales") or ("x0", 1.0, 1.0, "Monzalbarba")
+        return res[0], res[1], res[2], "Monzalbarba"
+    if postal_code == "50190" or "garrapinillos" in specific_low:
+        res = find_nb_tier("Garrapinillos") or find_nb_tier("Barrios Rurales") or ("x0", 1.0, 1.0, "Garrapinillos")
+        return res[0], res[1], res[2], "Garrapinillos"
+    if postal_code == "50692" or "villarrapa" in specific_low:
+        res = find_nb_tier("Villarrapa") or find_nb_tier("Casetas") or ("x0", 1.0, 1.0, "Villarrapa")
+        return res[0], res[1], res[2], "Villarrapa"
+    if postal_code == "50620":
+        if "villarrapa" in raw_portal_context and has_valid_gps and float(lat) > 41.73:
+            res = find_nb_tier("Villarrapa") or find_nb_tier("Casetas") or ("x0", 1.0, 1.0, "Villarrapa")
+            return res[0], res[1], res[2], "Villarrapa"
+        res = find_nb_tier("Casetas") or ("x0", 1.0, 1.0, "Casetas")
+        return res[0], res[1], res[2], "Casetas"
+
+    if "villarrapa" in combined or "casetas" in combined or "monzalbarba" in combined or "garrapinillos" in combined:
         if "villarrapa" in combined and ("50692" in combined or (has_valid_gps and float(lat) > 41.73)):
             res = find_nb_tier("Villarrapa") or find_nb_tier("Casetas") or ("x0", 1.0, 1.0, "Villarrapa")
             return res[0], res[1], res[2], "Villarrapa"
+        if "monzalbarba" in combined and (has_valid_gps and -0.985 <= float(lon) <= -0.945 and float(lat) > 41.685):
+            res = find_nb_tier("Monzalbarba") or ("x0", 1.0, 1.0, "Monzalbarba")
+            return res[0], res[1], res[2], "Monzalbarba"
+        if "garrapinillos" in combined and (has_valid_gps and float(lat) < 41.715 and float(lon) < -0.965):
+            res = find_nb_tier("Garrapinillos") or ("x0", 1.0, 1.0, "Garrapinillos")
+            return res[0], res[1], res[2], "Garrapinillos"
         if "casetas" in combined and (not has_valid_gps or float(lat) <= 41.73):
             res = find_nb_tier("Casetas") or ("x0", 1.0, 1.0, "Casetas")
             return res[0], res[1], res[2], "Casetas"
@@ -321,6 +389,12 @@ def classify_neighborhood(
     if "san mateo de gállego" in combined or "san mateo de gallego" in combined:
         res = find_nb_tier("Barrios Rurales") or ("x0", 1.0, 1.0, "San Mateo de Gállego")
         return res[0], res[1], res[2], "San Mateo de Gállego"
+    if "san juan de mozarrifar" in combined:
+        res = find_nb_tier("San Juan de Mozarrifar") or find_nb_tier("Barrios Rurales") or ("x0", 1.0, 1.0, "San Juan de Mozarrifar")
+        return res[0], res[1], res[2], "San Juan de Mozarrifar"
+    if "juslibol" in specific_low or ("juslibol" in combined and has_valid_gps and float(lat) > 41.680):
+        res = find_nb_tier("Juslibol") or find_nb_tier("Barrios Rurales") or ("x0", 1.0, 1.0, "Juslibol")
+        return res[0], res[1], res[2], "Juslibol"
     if "montañana" in combined or "montanana" in combined or "peñaflor" in combined or "penaflor" in combined:
         if ("peñaflor" in combined or "penaflor" in combined) and (has_valid_gps and float(lat) > 41.725):
             res = find_nb_tier("Peñaflor") or find_nb_tier("Barrios Rurales") or ("x0", 1.0, 1.0, "Peñaflor")
@@ -342,22 +416,316 @@ def classify_neighborhood(
             res = find_nb_tier(near_nb) or find_nb_tier("Barrios Rurales") or ("x0", 1.0, 1.0, near_nb)
             return res[0], res[1], res[2], near_nb
 
-    # 1. Si la dirección/calle menciona explícitamente calles de La Paz o Torrero, asignar a La Paz
-    if any(k in specific_low for k in ["zafiro", "la paz", "cuarta avenida", "lasierra purroy", "villa de pau", "ortiz de zárate", "ortiz de zarate"]):
+    # 1. Diccionario prioritario de CALLES y MICRO-ZONAS (la calle proporcionada manda sobre el distrito genérico del portal)
+    # 1A. Casco Histórico Oeste: El Gancho vs San Pablo (3.5 pts, CP 50003) vs Este: Magdalena / Rebolería (7.8 pts, CP 50002)
+    if any(
+        k in street_search_text
+        for k in [
+            "casta álvarez",
+            "casta alvarez",
+            "calle de las armas",
+            "calle las armas",
+            "plaza de las armas",
+            "predicadores",
+            "aguadores",
+            "boggiero",
+            "basilio boggiero",
+            "calle mayoral",
+            "plaza santo domingo",
+            "calle san blas",
+            "broqueleros",
+            "calle de contamina",
+            "calle contamina",
+            "calle santa inés",
+            "calle santa ines",
+            "c/ santa inés",
+            "c/ santa ines",
+            "barrio del gancho",
+            "el gancho",
+        ]
+    ):
+        res = find_nb_tier("El Gancho")
+        if res:
+            return res
+
+    if any(
+        k in street_search_text
+        for k in [
+            "conde de aranda",
+            "conde aranda",
+            "calle san pablo",
+            "plaza san pablo",
+            "barrio san pablo",
+            "plaza de toros",
+            "ramón pignatelli",
+            "ramon pignatelli",
+            "calle pignatelli",
+            "madre rafols",
+            "calle santa lucía",
+            "calle santa lucia",
+            "c/ santa lucía",
+            "c/ santa lucia",
+            "calle cereros",
+            "calle cerdán",
+            "calle cerdan",
+            "calle del temple",
+            "calle temple",
+        ]
+    ):
+        res = find_nb_tier("San Pablo")
+        if res:
+            return res
+
+    if "rebolería" in street_search_text or "reboleria" in street_search_text:
+        res = find_nb_tier("Rebolería")
+        if res:
+            return res
+
+    if any(
+        k in street_search_text
+        for k in [
+            "la magdalena",
+            "plaza de la magdalena",
+            "calle magdalena",
+            "cantín y gamboa",
+            "cantin y gamboa",
+            "doctor alejandro palomar",
+            "doctor palomar",
+            "alejandro palomar",
+            "calle de la reconquista",
+            "calle reconquista",
+            "calle de las cortesías",
+            "calle de las cortesias",
+            "cortesías",
+            "cortesias",
+            "calle mayor",
+            "heroísmo",
+            "heroismo",
+            "calle asalto",
+            "calle estudios",
+            "san vicente de paúl",
+            "san vicente de paul",
+            "calle palafox",
+            "tenerías",
+            "tenerias",
+            "coso bajo",
+            "san bruno",
+            "calle san miguel",
+            "plaza san miguel",
+        ]
+    ):
+        res = find_nb_tier("Magdalena")
+        if res:
+            return res
+
+    # Desambiguación por Código Postal (50003 vs 50002 vs 50001) y longitud GPS dentro de Casco Antiguo / Casco Histórico
+    if any(k in raw_portal_context for k in ["casco antiguo", "casco histórico", "casco historico", "alfonso (50003)"]):
+        if postal_code == "50003" or (has_valid_gps and float(lon) < -0.8810):
+            target_casco_w = "San Pablo" if (has_valid_gps and float(lat) < 41.6558) else "El Gancho"
+            res = find_nb_tier(target_casco_w)
+            if res:
+                return res
+        if postal_code == "50002" or (has_valid_gps and float(lon) > -0.8768):
+            res = find_nb_tier("Magdalena")
+            if res:
+                return res
+        if postal_code == "50001":
+            res = find_nb_tier("Centro")
+            if res:
+                return res
+
+    # 1B. Distrito Sur: Pinares de Venecia (5.5) vs Torrero (3.5) vs La Paz (3.5) vs Parque Venecia (5.5)
+    if "pinares de venecia" in specific_low:
+        res = find_nb_tier("Pinares de Venecia")
+        if res:
+            return res
+
+    if any(
+        k in street_search_text
+        for k in [
+            "calle granada",
+            "c/ granada",
+            "calle del pinar",
+            "calle de lugo",
+            "calle lugo",
+            "río jiloca",
+            "rio jiloca",
+            "josé lóbez pueyo",
+            "jose lobez pueyo",
+            "falkland",
+            "fray julián garcés",
+            "fray julian garces",
+            "avenida de américa",
+            "avenida américa",
+            "avda de américa",
+            "avda américa",
+            "calle la coruña",
+            "c/ la coruña",
+            "doctor ibáñez",
+            "doctor ibanez",
+            "barrio torrero",
+        ]
+    ):
+        res = find_nb_tier("Torrero")
+        if res:
+            return res
+
+    if any(
+        k in street_search_text
+        for k in [
+            "calle del zafiro",
+            "calle zafiro",
+            "c/ zafiro",
+            "cuarta avenida",
+            "lasierra purroy",
+            "villa de pau",
+            "ortiz de zárate",
+            "ortiz de zarate",
+            "barrio la paz",
+            "la paz (50007)",
+        ]
+    ):
         res = find_nb_tier("La Paz")
         if res:
             return res
 
-    # 2. Primero buscar coincidencia exacta en la dirección o título específico
+    if "parque venecia" in specific_low:
+        if has_valid_gps and float(lat) >= 41.6255:
+            res = find_nb_tier("Torrero")
+            if res:
+                return res
+        res = find_nb_tier("Parque Venecia")
+        if res:
+            return res
+
+    # 1C. Distrito Oeste: Los Enlaces (7.8) vs Valdefierro (3.5, CP 50012) vs Miralbueno (5.5) vs Oliver (3.5, CP 50011)
+    if "los enlaces" in specific_low or "piso en enlaces" in specific_low or "barrio enlaces" in specific_low or "enlaces (" in specific_low:
+        res = find_nb_tier("Los Enlaces")
+        if res:
+            return res
+
+    if (
+        "valdefierro" in specific_low
+        or any(
+            k in street_search_text
+            for k in [
+                "heraldo de aragón",
+                "heraldo de aragon",
+                "miguel ángel blanco",
+                "miguel angel blanco",
+                "calle de piscis",
+                "calle piscis",
+                "federico ozanam",
+                "calle tulipán",
+                "calle tulipan",
+                "francisca millán",
+                "francisca millan",
+                "pléyades",
+                "pleyades",
+                "vía láctea",
+                "via lactea",
+            ]
+        )
+        or ("oliver" in raw_portal_context and "valdefierro" in raw_portal_context and (postal_code == "50012" or (has_valid_gps and float(lat) < 41.6455)))
+    ):
+        res = find_nb_tier("Valdefierro")
+        if res:
+            return res
+
+    if "miralbueno" in specific_low or any(k in street_search_text for k in ["camino del pilón", "camino del pilon", "lagos de coronas", "ibón de", "ibon de"]):
+        res = find_nb_tier("Miralbueno")
+        if res:
+            return res
+
+    if (
+        "oliver" in specific_low
+        or any(k in street_search_text for k in ["antonio leyva", "san alberto magno", "reina felicia", "teodora lamadrid"])
+        or ("oliver" in raw_portal_context and "valdefierro" in raw_portal_context and (postal_code == "50011" or (has_valid_gps and float(lat) >= 41.6455)))
+    ):
+        res = find_nb_tier("Oliver")
+        if res:
+            return res
+
+    # 1D. Miraflores (5.5) vs Centro / Doctor Cerrada (7.8) vs Romareda / Fernando El Católico / Hernán Cortés / Ruiseñores (10.0) vs Delicias (3.5) vs Universitas (7.8)
+    if "miraflores" in specific_low or any(
+        k in street_search_text
+        for k in ["parque miraflores", "marqués de ahumada", "marques de ahumada", "juan josé gárate", "juan jose garate", "francisco cidón", "francisco cidon"]
+    ):
+        res = find_nb_tier("Miraflores")
+        if res:
+            return res
+
+    if "doctor cerrada" in specific_low or "calle ricla" in specific_low or "calle cánovas" in street_search_text or "lcalle cánovas" in street_search_text:
+        res = find_nb_tier("Centro")
+        if res:
+            return res
+
+    if any(
+        k in street_search_text
+        for k in [
+            "desiderio escosura",
+            "calle escosura",
+            "obispo covarrubias",
+            "calle unceta",
+            "padre manjón",
+            "padre manjon",
+            "conde de la viñaza",
+            "conde de la vinaza",
+            "avenida madrid",
+            "avda madrid",
+            "avenida de madrid",
+            "avenida navarra",
+            "ave - delicias",
+            "monsalud",
+            "bombarda",
+            "andrés vicente",
+            "andres vicente",
+            "jardines de lisboa",
+            "calle delicias",
+        ]
+    ):
+        res = find_nb_tier("Delicias")
+        if res:
+            return res
+
+    if any(k in specific_low for k in ["vía univérsitas", "via universitas", "duquesa villahermosa", "ciudad jardín", "ciudad jardin"]):
+        res = find_nb_tier("Universitas")
+        if res:
+            return res
+
+    if any(k in specific_low for k in ["félix latassa", "felix latassa", "gómez laguna", "gomez laguna", "aragonia", "audiorama", "violante de hungría", "violante de hungria", "emperador carlos v", "isabel la católica", "isabel la catolica"]):
+        res = find_nb_tier("Romareda")
+        if res:
+            return res
+
+    if any(k in specific_low for k in ["fernando el católico", "fernando el catolico", "gran vía", "gran via"]):
+        res = find_nb_tier("Fernando El Católico")
+        if res:
+            return res
+
+    if any(k in specific_low for k in ["hernán cortés", "hernan cortes", "paseo teruel"]) or "hernán cortés - madre sacramento" in desc_low:
+        res = find_nb_tier("Hernán Cortés")
+        if res:
+            return res
+
+    if any(k in specific_low for k in ["ruiseñores", "ruisenores", "paseo cuéllar", "paseo cuellar"]):
+        res = find_nb_tier("Ruiseñores")
+        if res:
+            return res
+
+    # 2. Buscar coincidencia exacta de barrio en la dirección o título limpio (sin el distrito entre paréntesis)
     for tier_key in ["x4", "x3", "x2", "x1", "x0"]:
         tier_data = zm.get(tier_key, {})
         for nb in tier_data.get("neighborhoods", []):
             if nb.lower() in specific_low:
                 return tier_key, float(tier_data["multiplier"]), float(tier_data["base_score_10"]), nb
 
-    # 3. Si el portal devuelve el distrito agrupado "Torrero - La Paz - Parque Venecia" sin mencionar Venecia en la dirección, usar La Paz / Torrero
-    if "torrero" in combined and "la paz" in combined and "venecia" in combined and "venecia" not in specific_low:
-        res = find_nb_tier("La Paz") or find_nb_tier("Torrero")
+    # 3. Si el portal devuelve el distrito agrupado "Torrero - La Paz" o "Torrero - La Paz - Parque Venecia" sin mencionar Venecia en la dirección, usar Torrero / La Paz
+    if "torrero" in raw_portal_context and "la paz" in raw_portal_context and "venecia" not in specific_low:
+        if has_valid_gps and float(lon) > -0.8795 and float(lat) < 41.6285:
+            res = find_nb_tier("La Paz")
+        else:
+            res = find_nb_tier("Torrero") or find_nb_tier("La Paz")
         if res:
             return res
 
@@ -368,20 +736,22 @@ def classify_neighborhood(
             if nb.lower() in combined:
                 return tier_key, float(tier_data["multiplier"]), float(tier_data["base_score_10"]), nb
 
-    if any(k in combined for k in ["gómez laguna", "gomez laguna", "aragonia", "audiorama", "parque grande", "gran vía", "gran via", "félix latassa", "felix latassa"]):
-        return find_nb_tier("Romareda") or ("x4", 10.0, 10.0, "Romareda")
-    if any(k in combined for k in ["paseo teruel", "puerta del carmen", "hernán cortés", "hernan cortes", "doctor cerrada", "paseo pamplona", "constitución", "constitucion", "damas", "centro"]):
+    if any(k in combined for k in ["puerta del carmen", "doctor cerrada", "paseo pamplona", "constitución", "constitucion", "damas", "centro"]):
         return find_nb_tier("Centro") or ("x3", 7.8, 7.8, "Centro")
-    if any(k in combined for k in ["vadorrey", "la jota", "azucarera", "cogullada", "el rabal"]):
+    if any(k in combined for k in ["vadorrey", "la jota", "azucarera", "cogullada", "el rabal", "picarral", "zalfonada"]):
         return find_nb_tier("Arrabal") or ("x2", 5.5, 5.5, "Arrabal")
-    if any(k in combined for k in ["conde de la viñaza", "conde de la vinaza", "duquesa villahermosa", "vía univérsitas", "via universitas", "avenida madrid", "avda madrid"]):
-        return find_nb_tier("Delicias") or ("x1", 3.5, 3.5, "Delicias")
     if any(k in combined for k in ["monasterio de siresa", "compromiso de caspe", "doctor iranzo", "salvador allende"]):
         return find_nb_tier("Las Fuentes") or ("x1", 3.5, 3.5, "Las Fuentes")
     if any(k in combined for k in ["san josé", "san jose", "tenor fleta", "cesáreo alierta", "cesareo alierta"]):
         return find_nb_tier("San José") or ("x2", 5.5, 5.5, "San José")
-    if any(k in combined for k in ["casco antiguo", "casco histórico", "casco historico", "el pilar", "san miguel", "predicadores", "san jorge", "don jaime", "calle de las armas"]):
-        return find_nb_tier("Magdalena") or ("x2", 5.5, 5.5, "Casco Histórico")
+    if any(k in combined for k in ["el pilar", "don jaime", "san jorge"]):
+        return find_nb_tier("Centro") or ("x3", 7.8, 7.8, "Centro")
+    if any(k in combined for k in ["casco antiguo", "casco histórico", "casco historico"]):
+        if has_valid_gps and float(lon) < -0.8810:
+            return find_nb_tier("El Gancho") or ("x1", 3.5, 3.5, "El Gancho")
+        if has_valid_gps and float(lon) > -0.8768:
+            return find_nb_tier("Magdalena") or ("x3", 7.8, 7.8, "Magdalena")
+        return find_nb_tier("El Gancho") or ("x1", 3.5, 3.5, "El Gancho")
 
     # 5. Si el texto es genérico ("Zaragoza Capital" / "Zaragoza") pero hay coordenadas GPS exactas, asignar el barrio o pueblo real más cercano
     if has_valid_gps:
@@ -599,7 +969,10 @@ def evaluate_Discard_Criteria(
     if listing.get("is_bare_ownership") or "nuda propiedad" in desc:
         reasons.append("Descartado: Venta de Nuda Propiedad (no uso inmediato)")
 
-    if listing.get("is_rented") or "alquilado con inquilino" in desc or "vivienda alquilada" in desc:
+    if listing.get("is_rented") or any(k in desc for k in [
+        "alquilado con inquilino", "vivienda alquilada", "piso con inquilino",
+        "con inquilinos", "vivienda con inquilino", "inmueble alquilado", "actualmente alquilado"
+    ]):
         reasons.append("Descartado: Inmueble actualmente alquilado a terceros")
 
     sqm = float(listing.get("sqm") or 0)
@@ -655,13 +1028,14 @@ def score_listing(listing: Dict[str, Any], profile: Optional[Dict[str, Any]] = N
     desc = f"{listing.get('title', '')} {listing.get('description', '')}".lower()
 
     tier_key, zone_mult, zone_base_10, matched_nb = classify_neighborhood(
-        listing.get("neighborhood", ""),
+        listing.get("raw_neighborhood") or listing.get("neighborhood", ""),
         listing.get("address", ""),
         profile,
         title_text=listing.get("title", ""),
         url_text=listing.get("url", ""),
         lat=lat,
         lon=lon,
+        description_text=listing.get("description", ""),
     )
     is_pueblo = is_pueblo_or_rural(listing, matched_nb, lat, lon)
     is_house, is_pueblo_bajo_or_house = is_house_or_ground_floor_in_pueblo(listing, is_pueblo)

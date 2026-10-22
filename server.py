@@ -329,7 +329,7 @@ def recalculate_all_scores(new_profile: dict) -> None:
         if not item:
             item = d
         else:
-            for k in ("price_eur", "sqm", "bedrooms", "bathrooms", "floor_num", "has_elevator", "has_terrace", "has_garage", "has_storage", "is_penthouse", "is_agency", "seller_name", "orientation", "heating_type", "community_eur", "year_built", "lat", "lon", "neighborhood", "address", "title", "description"):
+            for k in ("price_eur", "sqm", "bedrooms", "bathrooms", "floor_num", "has_elevator", "has_terrace", "has_garage", "has_storage", "is_penthouse", "is_agency", "seller_name", "orientation", "heating_type", "community_eur", "year_built", "lat", "lon", "neighborhood", "address", "title", "description", "url"):
                 if d.get(k) is not None and item.get(k) is None:
                     item[k] = d[k]
         score_res = score_listing(item, new_profile)
@@ -337,15 +337,17 @@ def recalculate_all_scores(new_profile: dict) -> None:
         new_nb = d.get("neighborhood")
         if matched_nb and matched_nb not in ("Zaragoza (General)", "Zaragoza Capital"):
             new_nb = matched_nb
+            item["neighborhood"] = matched_nb
         conn.execute(
             """
             UPDATE listings
-            SET neighborhood = ?, score_json = ?, final_ranking_score = ?, base_score_100 = ?, zone_tier = ?, hard_discard = ?
+            SET neighborhood = ?, score_json = ?, raw_json = ?, final_ranking_score = ?, base_score_100 = ?, zone_tier = ?, hard_discard = ?
             WHERE id = ?
             """,
             (
                 new_nb,
                 json.dumps(score_res, ensure_ascii=False),
+                json.dumps(item, ensure_ascii=False),
                 score_res["final_ranking_score"],
                 score_res["base_score_100"],
                 score_res["zone_info"]["tier"],
