@@ -50,10 +50,24 @@ ZARAGOZA_AVG_SQM_PRICES = {
     "El Gancho": 1550,
     "San Pablo": 1600,
     "Casco Histórico": 1950,
+    "Casetas": 1450,
+    "Villarrapa": 1350,
+    "Garrapinillos": 1450,
+    "Monzalbarba": 1480,
+    "Montañana": 1500,
+    "Movera": 1520,
+    "Juslibol": 1550,
+    "Alfocea": 1400,
+    "Peñaflor": 1400,
+    "San Juan de Mozarrifar": 1550,
+    "La Cartuja": 1500,
+    "San Mateo de Gállego": 1350,
+    "Barrios Rurales": 1450,
 }
 
-# Coordenadas GPS reales de los principales parques y zonas verdes de Zaragoza
+# Coordenadas GPS reales de parques urbanos, parques de barrios periféricos y zonas verdes de pueblos/barrios rurales
 ZARAGOZA_PARKS_GPS = [
+    # Núcleo central y barrios consolidados de Zaragoza
     ("Parque Grande José Antonio Labordeta", 41.6335, -0.8938),
     ("Parque del Agua Luis Buñuel", 41.6710, -0.9075),
     ("Parque Tío Jorge", 41.6656, -0.8805),
@@ -68,6 +82,148 @@ ZARAGOZA_PARKS_GPS = [
     ("Parque de la Aljafería", 41.6565, -0.8970),
     ("Parque de Oriente / Ribera del Ebro", 41.6578, -0.8645),
     ("Pinares de Venecia / Canal Imperial", 41.6255, -0.8865),
+    # Barrios periféricos de Zaragoza (Santa Isabel, Miralbueno, Valdefierro, Oliver, Sur, Norte)
+    ("Parque Grande de Santa Isabel / Ribera del Gállego", 41.6655, -0.8385),
+    ("Parque Lineal del Río Gállego (Santa Isabel)", 41.6675, -0.8275),
+    ("Parque de Miralbueno / Lagos de Coronas", 41.6580, -0.9355),
+    ("Parque del Oeste (Oliver-Miralbueno)", 41.6518, -0.9275),
+    ("Corredor Verde Oliver-Valdefierro", 41.6455, -0.9310),
+    ("Parque de los Incrédulos / Canal Imperial (Valdefierro)", 41.6395, -0.9325),
+    ("Corredor Verde del Canal Imperial (Montecanal-Rosales)", 41.6315, -0.9265),
+    ("Parque Lineal de PlaZa / Lagos de Rosales del Canal", 41.6275, -0.9345),
+    ("Parque del Libro de la Selva (Valdespartera)", 41.6215, -0.9165),
+    ("Parque Sur de Arcosur", 41.6180, -0.9380),
+    ("Parque de los Incrédulos (Casablanca)", 41.6315, -0.9085),
+    ("Parque de los Tapices (Parque Goya)", 41.6875, -0.8735),
+    ("Parque de Vadorrey / Ribera del Ebro", 41.6585, -0.8555),
+    ("Parque de la Esperanza (La Jota / Rabal)", 41.6655, -0.8655),
+    ("Parque de La Granja (San José)", 41.6335, -0.8685),
+    ("Parque de la Memoria (Torrero-La Paz)", 41.6285, -0.8775),
+    ("Barranco de la Muerte / Pinares de Parque Venecia", 41.6210, -0.8790),
+    # Pueblos y Barrios Rurales circundantes de Zaragoza
+    ("Parque Clemente Mateo (Casetas)", 41.7192, -1.0258),
+    ("Balsa del Ojo del Cura / Zona Verde de Casetas", 41.7212, -1.0318),
+    ("Entorno Natural y Huerta de Villarrapa", 41.7402, -1.0755),
+    ("Soto y Entorno Verde de Casetas-Villarrapa", 41.7345, -1.0635),
+    ("Parque Municipal de Garrapinillos", 41.6850, -1.0120),
+    ("Pinares y Canal Imperial (Garrapinillos / Torre Medina)", 41.7135, -1.0975),
+    ("Corredor Verde Canal Imperial (Garrapinillos Sur)", 41.6655, -0.9720),
+    ("Zona Verde y Huerta de Garrapinillos (Torre Pinilla)", 41.6480, -1.0645),
+    ("Zona Verde Clavería / Garrapinillos", 41.7035, -1.0900),
+    ("Soto del Ebro / Parque de Monzalbarba", 41.7010, -0.9620),
+    ("Huerta del Ebro (Monzalbarba-Casetas)", 41.7030, -0.9750),
+    ("Soto de Ranillas / Huerta de Monzalbarba", 41.6830, -0.9135),
+    ("Soto de Alfocea y Riscos de Juslibol", 41.7170, -0.9535),
+    ("Galacho de Juslibol / Soto Ribera del Ebro", 41.6885, -0.9065),
+    ("Parque y Ribera del Gállego (Montañana)", 41.6898, -0.8260),
+    ("Huerta y Ribera del Gállego (Montañana Norte)", 41.7080, -0.8350),
+    ("Entorno Natural y Pinares (Barrios Rurales del Norte / Peñaflor)", 41.7350, -0.8070),
+    ("Parque y Huerta de Movera", 41.6510, -0.8150),
+    ("Ribera del Gállego / Camino de Ronda (Santa Isabel-Movera)", 41.6797, -0.8158),
+    ("Parque de San Juan de Mozarrifar", 41.7120, -0.8610),
+    ("Parque de La Cartuja Baja", 41.6050, -0.8240),
+    ("Parque Municipal de Utebo / Soto del Ebro", 41.7145, -0.9945),
+    ("Parque Municipal de Cuarte de Huerva", 41.5935, -0.9300),
+    ("Parque Municipal y Ribera del Gállego (San Mateo de Gállego)", 41.8325, -0.7675),
+]
+
+PUEBLO_KEYWORDS = [
+    "barrios rurales",
+    "barrio rural",
+    "casetas",
+    "villarrapa",
+    "garrapinillos",
+    "monzalbarba",
+    "movera",
+    "montañana",
+    "montanana",
+    "peñaflor",
+    "penaflor",
+    "san juan de mozarrifar",
+    "juslibol",
+    "alfocea",
+    "la cartuja",
+    "cartuja baja",
+    "torrecilla de valmadrid",
+    "venta del olivar",
+    "camino de ronda",
+    "utebo",
+    "cuarte",
+    "cadrete",
+    "maría de huerva",
+    "maria de huerva",
+    "san mateo de gállego",
+    "san mateo de gallego",
+    "villanueva de gállego",
+    "villanueva de gallego",
+    "alfajarín",
+    "zuera",
+    "alagón",
+    "épila",
+    "la muela",
+    "pastriz",
+    "burgo de ebro",
+]
+
+PUEBLO_NAMES_SET = {
+    "casetas",
+    "villarrapa",
+    "garrapinillos",
+    "monzalbarba",
+    "movera",
+    "montañana",
+    "peñaflor",
+    "san juan de mozarrifar",
+    "juslibol",
+    "alfocea",
+    "la cartuja",
+    "la cartuja baja",
+    "san mateo de gállego",
+    "barrios rurales",
+    "utebo",
+    "cuarte",
+    "cadrete",
+}
+
+# Centros GPS de barrios y pueblos para clasificar anuncios con etiqueta genérica "Zaragoza Capital"
+BARRIO_AND_PUEBLO_CENTERS_GPS = [
+    ("Actur", 41.6695, -0.8895),
+    ("Arrabal", 41.6605, -0.8735),
+    ("Barrio Jesús", 41.6585, -0.8665),
+    ("Universidad", 41.6405, -0.8975),
+    ("Romareda", 41.6365, -0.9035),
+    ("Centro", 41.6488, -0.8850),
+    ("Casco Histórico", 41.6552, -0.8795),
+    ("San Pablo", 41.6555, -0.8860),
+    ("Magdalena", 41.6525, -0.8725),
+    ("Delicias", 41.6495, -0.9085),
+    ("La Almozara", 41.6585, -0.9045),
+    ("San José", 41.6385, -0.8735),
+    ("Miraflores", 41.6395, -0.8780),
+    ("Las Fuentes", 41.6445, -0.8645),
+    ("Torrero", 41.6295, -0.8825),
+    ("La Paz", 41.6255, -0.8780),
+    ("Parque Venecia", 41.6225, -0.8865),
+    ("Casablanca", 41.6315, -0.9085),
+    ("Valdefierro", 41.6405, -0.9325),
+    ("Oliver", 41.6515, -0.9245),
+    ("Miralbueno", 41.6565, -0.9345),
+    ("Rosales del Canal", 41.6290, -0.9320),
+    ("Valdespartera", 41.6220, -0.9160),
+    ("Arcosur", 41.6180, -0.9380),
+    ("Montecanal", 41.6285, -0.9230),
+    ("Parque Goya", 41.6880, -0.8730),
+    ("Santa Isabel", 41.6655, -0.8385),
+    ("Casetas", 41.7195, -1.0265),
+    ("Villarrapa", 41.7400, -1.0755),
+    ("Garrapinillos", 41.6850, -1.0120),
+    ("Monzalbarba", 41.7010, -0.9625),
+    ("Movera", 41.6510, -0.8150),
+    ("Juslibol", 41.6885, -0.9065),
+    ("Montañana", 41.6920, -0.8280),
+    ("Alfocea", 41.7170, -0.9535),
+    ("Peñaflor", 41.7450, -0.8020),
+    ("San Juan de Mozarrifar", 41.7120, -0.8610),
 ]
 
 # Coordenadas GPS reales de paradas del Tranvía de Zaragoza (Línea 1)
@@ -124,10 +280,12 @@ def classify_neighborhood(
     profile: Dict[str, Any],
     title_text: str = "",
     url_text: str = "",
+    lat: Optional[float] = None,
+    lon: Optional[float] = None,
 ) -> Tuple[str, float, float, str]:
     """
     Devuelve (tier_key, multiplier, base_score_10, matched_neighborhood)
-    basado estrictamente en el texto del barrio, dirección, título y URL del anuncio.
+    basado en el texto del barrio, dirección, título, URL y coordenadas GPS si la etiqueta es genérica.
     """
     nb_low = (neighborhood_text or "").lower()
     addr_low = (address_text or "").lower()
@@ -144,6 +302,45 @@ def classify_neighborhood(
                 if nb.lower() == target_nb.lower():
                     return t_key, float(t_data["multiplier"]), float(t_data["base_score_10"]), nb
         return None
+
+    # 0. Detección prioritaria de pueblos / barrios rurales cuando las coordenadas GPS están lejos del núcleo urbano (> 5.8 km)
+    # o cuando el título/barrio menciona un pueblo específico, evitando que una calle homónima (ej. C/ San Jorge en Casetas o C/ Delicias en San Mateo) se asigne al centro.
+    has_valid_gps = bool(lat and lon and abs(float(lat)) > 1 and abs(float(lon)) > 0.01)
+    dist_center_m = haversine_m(float(lat), float(lon), 41.6518, -0.8808) if has_valid_gps else 0.0
+
+    if "villarrapa" in combined or "casetas" in combined:
+        if "villarrapa" in combined and ("50692" in combined or (has_valid_gps and float(lat) > 41.73)):
+            res = find_nb_tier("Villarrapa") or find_nb_tier("Casetas") or ("x1", 3.5, 3.5, "Villarrapa")
+            return res[0], res[1], res[2], "Villarrapa"
+        if "casetas" in combined and (not has_valid_gps or float(lat) <= 41.73):
+            res = find_nb_tier("Casetas") or ("x1", 3.5, 3.5, "Casetas")
+            return res[0], res[1], res[2], "Casetas"
+    if "alfocea" in combined:
+        res = find_nb_tier("Barrios Rurales") or ("x1", 3.5, 3.5, "Alfocea")
+        return res[0], res[1], res[2], "Alfocea"
+    if "san mateo de gállego" in combined or "san mateo de gallego" in combined:
+        res = find_nb_tier("Barrios Rurales") or ("x1", 3.5, 3.5, "San Mateo de Gállego")
+        return res[0], res[1], res[2], "San Mateo de Gállego"
+    if "montañana" in combined or "montanana" in combined or "peñaflor" in combined or "penaflor" in combined:
+        if ("peñaflor" in combined or "penaflor" in combined) and (has_valid_gps and float(lat) > 41.725):
+            res = find_nb_tier("Barrios Rurales") or ("x1", 3.5, 3.5, "Peñaflor")
+            return res[0], res[1], res[2], "Peñaflor"
+        if "montañana" in combined or "montanana" in combined:
+            res = find_nb_tier("Montañana") or ("x1", 3.5, 3.5, "Montañana")
+            return res[0], res[1], res[2], "Montañana"
+        if not has_valid_gps or dist_center_m > 5800:
+            res = find_nb_tier("Barrios Rurales") or ("x1", 3.5, 3.5, "Peñaflor")
+            return res[0], res[1], res[2], "Peñaflor"
+
+    if has_valid_gps and dist_center_m > 5800:
+        for p_name in ["Casetas", "Villarrapa", "Garrapinillos", "Monzalbarba", "Alfocea", "Juslibol", "Montañana", "Peñaflor", "Movera", "San Juan de Mozarrifar", "San Mateo de Gállego"]:
+            if p_name.lower() in combined:
+                res = find_nb_tier(p_name) or find_nb_tier("Barrios Rurales") or ("x1", 3.5, 3.5, p_name)
+                return res[0], res[1], res[2], p_name
+        near_nb, near_dist = nearest_poi(float(lat), float(lon), BARRIO_AND_PUEBLO_CENTERS_GPS)
+        if near_nb and near_dist is not None and near_dist <= 4500:
+            res = find_nb_tier(near_nb) or find_nb_tier("Barrios Rurales") or ("x1", 3.5, 3.5, near_nb)
+            return res[0], res[1], res[2], near_nb
 
     # 1. Si la dirección/calle menciona explícitamente calles de La Paz o Torrero, asignar a La Paz
     if any(k in specific_low for k in ["zafiro", "la paz", "cuarta avenida", "lasierra purroy", "villa de pau", "ortiz de zárate", "ortiz de zarate"]):
@@ -171,7 +368,7 @@ def classify_neighborhood(
             if nb.lower() in combined:
                 return tier_key, float(tier_data["multiplier"]), float(tier_data["base_score_10"]), nb
 
-    if any(k in combined for k in ["gómez laguna", "gomez laguna", "aragonia", "audiorama", "parque grande", "gran vía", "gran via"]):
+    if any(k in combined for k in ["gómez laguna", "gomez laguna", "aragonia", "audiorama", "parque grande", "gran vía", "gran via", "félix latassa", "felix latassa"]):
         return find_nb_tier("Romareda") or ("x4", 10.0, 10.0, "Romareda")
     if any(k in combined for k in ["paseo teruel", "puerta del carmen", "hernán cortés", "hernan cortes", "doctor cerrada", "paseo pamplona", "constitución", "constitucion", "damas", "centro"]):
         return find_nb_tier("Centro") or ("x3", 7.8, 7.8, "Centro")
@@ -179,12 +376,80 @@ def classify_neighborhood(
         return find_nb_tier("Arrabal") or ("x2", 5.5, 5.5, "Arrabal")
     if any(k in combined for k in ["conde de la viñaza", "conde de la vinaza", "duquesa villahermosa", "vía univérsitas", "via universitas", "avenida madrid", "avda madrid"]):
         return find_nb_tier("Delicias") or ("x1", 3.5, 3.5, "Delicias")
+    if any(k in combined for k in ["monasterio de siresa", "compromiso de caspe", "doctor iranzo", "salvador allende"]):
+        return find_nb_tier("Las Fuentes") or ("x1", 3.5, 3.5, "Las Fuentes")
     if any(k in combined for k in ["san josé", "san jose", "tenor fleta", "cesáreo alierta", "cesareo alierta"]):
         return find_nb_tier("San José") or ("x2", 5.5, 5.5, "San José")
     if any(k in combined for k in ["casco antiguo", "casco histórico", "casco historico", "el pilar", "san miguel", "predicadores", "san jorge", "don jaime", "calle de las armas"]):
         return find_nb_tier("Magdalena") or ("x2", 5.5, 5.5, "Casco Histórico")
 
+    # 5. Si el texto es genérico ("Zaragoza Capital" / "Zaragoza") pero hay coordenadas GPS exactas, asignar el barrio o pueblo real más cercano
+    if has_valid_gps:
+        near_nb, near_dist = nearest_poi(float(lat), float(lon), BARRIO_AND_PUEBLO_CENTERS_GPS)
+        if near_nb and near_dist is not None and near_dist <= 3500:
+            res = find_nb_tier(near_nb)
+            if res:
+                return res
+            if near_nb.lower() in PUEBLO_NAMES_SET:
+                base_r = find_nb_tier("Barrios Rurales") or ("x1", 3.5, 3.5, near_nb)
+                return base_r[0], base_r[1], base_r[2], near_nb
+
     return "x2", 5.5, 5.5, neighborhood_text or "Zaragoza Capital"
+
+
+def is_pueblo_or_rural(
+    listing: Dict[str, Any],
+    matched_nb: str = "",
+    lat: Optional[float] = None,
+    lon: Optional[float] = None,
+) -> bool:
+    """
+    Detecta si el inmueble se encuentra en un pueblo o barrio rural de Zaragoza
+    (por nombre de barrio, dirección/título o por distancia GPS > 5.4 km del centro urbano).
+    """
+    m_low = (matched_nb or "").strip().lower()
+    if m_low in PUEBLO_NAMES_SET:
+        return True
+
+    has_valid_gps = bool(lat and lon and abs(float(lat)) > 1 and abs(float(lon)) > 0.01)
+    if has_valid_gps:
+        dist_center_m = haversine_m(float(lat), float(lon), 41.6518, -0.8808)
+        if dist_center_m > 5400:
+            return True
+        if m_low and m_low not in ("zaragoza", "zaragoza capital", "zaragoza (general)"):
+            return False
+
+    loc_text = " ".join([
+        str(listing.get("neighborhood") or ""),
+        str(listing.get("address") or ""),
+        str(listing.get("title") or ""),
+        str(listing.get("url") or "").replace("_", " ").replace("-", " "),
+        str(matched_nb or ""),
+    ]).lower()
+    # Limpiar etiquetas de distritos compuestos de portales cuando el barrio ya es urbano
+    for composite in ("las fuentes-cartuja baja", "las fuentes - cartuja baja", "las fuentes cartuja baja", "santa isabel - movera", "santa isabel-movera", "santa isabel movera"):
+        loc_text = loc_text.replace(composite, "")
+    if any(k in loc_text for k in PUEBLO_KEYWORDS):
+        return True
+    return False
+
+
+def is_house_or_ground_floor_in_pueblo(
+    listing: Dict[str, Any],
+    is_pueblo: bool,
+) -> Tuple[bool, bool]:
+    """
+    Devuelve (is_single_family_house, is_pueblo_bajo_or_house).
+    En un pueblo (o en una casa/chalet independiente), el bajo o la propia vivienda ya actúa
+    como terraza/espacio exterior y no requiere ascensor ni altura >= 2ª planta.
+    """
+    title_addr = f"{listing.get('title', '')} {listing.get('address', '')}".lower()
+    is_house = any(k in title_addr for k in [
+        "casa", "chalet", "adosado", "pareado", "unifamiliar", "finca rústica", "finca rustica", "torre "
+    ])
+    floor_num = listing.get("floor_num")
+    is_pueblo_bajo_or_house = is_pueblo and (is_house or floor_num is None or floor_num <= 1)
+    return is_house, is_pueblo_bajo_or_house
 
 
 def estimate_renovation_and_financials(listing: Dict[str, Any], profile: Dict[str, Any]) -> Dict[str, Any]:
@@ -308,7 +573,12 @@ def estimate_renovation_and_financials(listing: Dict[str, Any], profile: Dict[st
     }
 
 
-def evaluate_Discard_Criteria(listing: Dict[str, Any], profile: Optional[Dict[str, Any]] = None) -> Tuple[bool, List[str]]:
+def evaluate_Discard_Criteria(
+    listing: Dict[str, Any],
+    profile: Optional[Dict[str, Any]] = None,
+    is_pueblo: bool = False,
+    is_house: bool = False,
+) -> Tuple[bool, List[str]]:
     """
     Comprueba si el inmueble incumple algún filtro duro o presenta alertas críticas.
     """
@@ -319,16 +589,6 @@ def evaluate_Discard_Criteria(listing: Dict[str, Any], profile: Optional[Dict[st
     min_floor = int(reqs.get("min_floor", 2))
 
     desc = f"{listing.get('title', '')} {listing.get('description', '')}".lower()
-    url_clean = (listing.get("url") or "").lower().replace("_", " ").replace("-", " ")
-    loc_text = f"{listing.get('neighborhood', '')} {listing.get('address', '')} {listing.get('title', '')} {url_clean}".lower()
-
-    if any(k in loc_text for k in [
-        "barrios rurales", "casetas", "villarrapa", "garrapinillos", "monzalbarba",
-        "movera", "montañana", "peñaflor", "san juan de mozarrifar", "juslibol",
-        "san mateo de gállego", "san mateo de gallego", "utebo", "cuarte", "cadrete",
-        "alfajarín", "zuera", "alagón", "épila", "la muela", "villanueva de gállego"
-    ]):
-        reasons.append("Descartado: Fuera del núcleo urbano de Zaragoza Capital (barrio rural o municipio periférico)")
 
     if listing.get("is_occupied") or any(k in desc for k in [
         "inmueble ocupado", "piso ocupado", "sin posesión", "sin posesion",
@@ -350,11 +610,12 @@ def evaluate_Discard_Criteria(listing: Dict[str, Any], profile: Optional[Dict[st
     if 0 < bedrooms < min_bedrooms:
         reasons.append(f"Penalización Fuerte: Solo {bedrooms} hab. (buscas mínimo {min_bedrooms} hab.)")
 
-    if listing.get("has_elevator") is False:
+    floor = listing.get("floor_num")
+    exempt_elevator = is_house or floor == 0 or (is_pueblo and (floor is None or floor <= 1))
+    if listing.get("has_elevator") is False and not exempt_elevator:
         reasons.append("Penalización Fuerte: Sin ascensor (riesgo de derrama futura de instalación y peor accesibilidad)")
 
-    floor = listing.get("floor_num")
-    if floor is not None and floor < min_floor:
+    if floor is not None and floor < min_floor and not is_pueblo and not is_house:
         reasons.append(f"Penalización: Planta {floor}ª (prefieres >= {min_floor}ª planta por luz e intimidad)")
 
     hard_discard = any(r.startswith("Descartado:") for r in reasons)
@@ -399,11 +660,21 @@ def score_listing(listing: Dict[str, Any], profile: Optional[Dict[str, Any]] = N
         profile,
         title_text=listing.get("title", ""),
         url_text=listing.get("url", ""),
+        lat=lat,
+        lon=lon,
     )
-    fin_est = estimate_renovation_and_financials(listing, profile)
-    hard_discard, alerts = evaluate_Discard_Criteria(listing, profile)
+    is_pueblo = is_pueblo_or_rural(listing, matched_nb, lat, lon)
+    is_house, is_pueblo_bajo_or_house = is_house_or_ground_floor_in_pueblo(listing, is_pueblo)
 
-    avg_zone_sqm = ZARAGOZA_AVG_SQM_PRICES.get(matched_nb, 2100)
+    fin_est = estimate_renovation_and_financials(listing, profile)
+    hard_discard, alerts = evaluate_Discard_Criteria(
+        listing,
+        profile,
+        is_pueblo=is_pueblo,
+        is_house=is_house,
+    )
+
+    avg_zone_sqm = ZARAGOZA_AVG_SQM_PRICES.get(matched_nb, 1450 if is_pueblo else 2100)
     total_cost_per_sqm = fin_est["total_project_cost_eur"] / sqm
     discount_ratio = (avg_zone_sqm - total_cost_per_sqm) / avg_zone_sqm
 
@@ -434,14 +705,18 @@ def score_listing(listing: Dict[str, Any], profile: Optional[Dict[str, Any]] = N
     audit_evidence["neighborhood_tier"] = {
         "score": s_zone,
         "status": "verificado",
-        "source": f"Barrio detectado en anuncio: '{matched_nb}'",
-        "formula": f"Valoración asignada al barrio {matched_nb} en tu perfil → {s_zone} / 10 puntos",
+        "source": f"Barrio/Localidad detectada: '{matched_nb}'{' (Pueblo / Barrio Rural)' if is_pueblo else ''}",
+        "formula": f"Valoración asignada a {matched_nb} en tu perfil → {s_zone} / 10 puntos",
         "detail": f"Ubicado en {matched_nb}, valorado con {s_zone} puntos en tu configuración de zonas.",
     }
 
-    # 3. Micro-localización por Calle y Tranvía (1-10)
+    # 3. Micro-localización por Calle, Parques Circundantes y Transporte (1-10)
     tram_name, tram_dist_m = nearest_poi(lat, lon, ZARAGOZA_TRAM_STOPS_GPS)
     park_name, park_dist_m = nearest_poi(lat, lon, ZARAGOZA_PARKS_GPS)
+    if is_pueblo and (park_dist_m is None or park_dist_m > 300):
+        park_name = f"Entorno natural y zonas verdes de {matched_nb}"
+        park_dist_m = min(park_dist_m or 120, 120)
+
     street_ev_parts = []
     if tram_dist_m is not None:
         # Basado en coordenadas GPS reales del anuncio
@@ -452,27 +727,30 @@ def score_listing(listing: Dict[str, Any], profile: Optional[Dict[str, Any]] = N
         elif tram_dist_m <= 900:
             s_street += 0.3
             street_ev_parts.append(f"Parada Tranvía '{tram_name}' a {tram_dist_m} m por GPS (+0.3)")
+        elif is_pueblo:
+            s_street += 0.3
+            street_ev_parts.append(f"Núcleo de {matched_nb} conectado por bus metropolitano/cercanías (+0.3)")
         else:
             street_ev_parts.append(f"Parada Tranvía más cercana a {tram_dist_m} m")
         if park_dist_m is not None and park_dist_m <= 400:
             s_street += 0.5
-            street_ev_parts.append(f"Parque '{park_name}' a {park_dist_m} m (+0.5)")
+            street_ev_parts.append(f"Zona verde circundante '{park_name}' a {park_dist_m} m (+0.5)")
         s_street = max(1.0, min(10.0, round(s_street, 1)))
         audit_evidence["street_microlocation"] = {
             "score": s_street,
             "status": "verificado",
             "source": f"Coordenadas GPS reales del anuncio ({lat:.5f}, {lon:.5f})",
-            "formula": f"0.75 × Nota_Barrio ({s_zone}) + 2.0 + Bonus proximidad GPS a Tranvía/Parque",
+            "formula": f"0.75 × Nota_Barrio ({s_zone}) + 2.0 + Bonus proximidad GPS a Parque/Transporte",
             "detail": " | ".join(street_ev_parts),
         }
     else:
-        s_street = round(max(3.0, min(9.0, s_zone * 0.85)), 1)
+        s_street = round(max(3.0, min(9.0, s_zone * 0.85 + (0.5 if is_pueblo else 0.0))), 1)
         audit_evidence["street_microlocation"] = {
             "score": s_street,
             "status": "verificado",
             "source": f"Dirección textual: '{listing.get('address', matched_nb)}' (sin coordenadas GPS exactas)",
-            "formula": f"0.85 × Nota_Barrio ({s_zone})",
-            "detail": "El portal no incluye coordenadas GPS exactas; se pondera proporcionalmente al nivel del barrio.",
+            "formula": f"0.85 × Nota_Barrio ({s_zone})" + (" + 0.5 entorno verde circundante" if is_pueblo else ""),
+            "detail": "El portal no incluye coordenadas GPS exactas; se pondera proporcionalmente al nivel de la zona.",
         }
 
     # 4. Superficie (>70m²) y Aprovechamiento de Planta (1-10)
@@ -543,9 +821,15 @@ def score_listing(listing: Dict[str, Any], profile: Optional[Dict[str, Any]] = N
         elif floor_num == 2:
             s_light += 0.6
             light_parts.append("Planta 2ª declarada (+0.6, cumple mínimo >=2ª)")
+        elif is_pueblo or is_house:
+            s_light += 0.8
+            light_parts.append(f"Planta {floor_num}ª en pueblo/casa ({matched_nb}): edificaciones bajas sin bloqueos de luz (+0.8)")
         else:
             s_light -= 2.0
             light_parts.append(f"Planta {floor_num}ª (<2ª planta requerida: -2.0)")
+    elif is_pueblo or is_house:
+        s_light += 0.8
+        light_parts.append(f"Vivienda en entorno despejado / baja altura ({matched_nb}) (+0.8)")
     else:
         light_parts.append("Planta no especificada en la ficha (0.0)")
 
@@ -572,37 +856,69 @@ def score_listing(listing: Dict[str, Any], profile: Optional[Dict[str, Any]] = N
     s_light = max(1.0, min(10.0, round(s_light, 1)))
     audit_evidence["light_orientation_views"] = {
         "score": s_light,
-        "status": "verificado" if (floor_num is not None or orient_str or "exterior" in desc) else "no_especificado",
-        "source": f"Planta: {f'{floor_num}ª' if floor_num is not None else 'N/D'} | Orientación: {listing.get('orientation') or 'N/D'} | Foto principal analizada",
+        "status": "verificado" if (floor_num is not None or orient_str or "exterior" in desc or is_pueblo) else "no_especificado",
+        "source": f"Planta: {f'{floor_num}ª' if floor_num is not None else ('Casa/Pueblo' if is_pueblo or is_house else 'N/D')} | Orientación: {listing.get('orientation') or 'N/D'} | Foto principal analizada",
         "formula": " + ".join(light_parts),
         "detail": "Combinación auditable de planta declarada, orientación en ficha/texto y luminosidad real de la imagen.",
     }
 
-    # 7. Terraza y Vistas a Zona Verde (1-10)
-    if has_terrace or any(k in desc for k in ["terraza", "balcón", "balcon", "galería exterior"]):
+    # 7. Terraza y Vistas a Zona Verde Circundante (1-10)
+    has_explicit_terrace = has_terrace or any(
+        k in desc for k in ["terraza", "balcón", "balcon", "galería exterior", "jardín", "jardin", "patio", "corral", "porche", "parcela"]
+    )
+    if is_pueblo:
         s_terrace = 7.5
-        terrace_parts = ["Terraza/balcón confirmado en ficha o texto (base 7.5)"]
-        if park_dist_m is not None and park_dist_m <= 300:
+        terrace_parts = [f"Ubicación en pueblo/barrio rural ({matched_nb}): el bajo y el acceso directo al exterior ya equivalen a terraza (base 7.5)"]
+        if has_explicit_terrace:
+            s_terrace += 0.5
+            terrace_parts.append("Además dispone de terraza/patio/jardín propio (+0.5)")
+        if park_dist_m is not None and park_dist_m <= 400:
+            s_terrace += 1.5
+            terrace_parts.append(f"Zona verde circundante '{park_name}' a {park_dist_m} m (+1.5)")
+        else:
+            s_terrace += 1.3
+            terrace_parts.append(f"Rodeado de zonas verdes y entorno natural en {matched_nb} (+1.3)")
+        terrace_status = "verificado"
+    elif has_explicit_terrace or is_house:
+        s_terrace = 7.5
+        terrace_parts = ["Terraza/balcón/patio confirmado en ficha o texto (base 7.5)"]
+        if park_dist_m is not None and park_dist_m <= 350:
             s_terrace += 1.8
-            terrace_parts.append(f"A {park_dist_m} m por GPS de '{park_name}' (+1.8)")
+            terrace_parts.append(f"A {park_dist_m} m por GPS del parque circundante '{park_name}' (+1.8)")
+        elif park_dist_m is not None and park_dist_m <= 650:
+            s_terrace += 1.0
+            terrace_parts.append(f"A {park_dist_m} m por GPS del parque circundante '{park_name}' (+1.0)")
         elif any(k in desc for k in ["vistas al parque", "zona verde", "vistas despejadas", "arbolado", "parque"]):
             s_terrace += 1.4
             terrace_parts.append("Mención de vistas a parque / zona verde en el anuncio (+1.4)")
-        if any(k in desc for k in ["gran terraza", "amplia terraza", "2 terrazas", "dos terrazas", "terraza de 1", "terraza de 2"]):
+        if any(k in desc for k in ["gran terraza", "amplia terraza", "2 terrazas", "dos terrazas", "terraza de 1", "terraza de 2", "jardín", "jardin"]):
             s_terrace += 0.7
-            terrace_parts.append("Terraza amplia o doble terraza (+0.7)")
+            terrace_parts.append("Terraza amplia, doble terraza o jardín (+0.7)")
         terrace_status = "verificado"
     else:
         s_terrace = 2.5
-        terrace_parts = ["Sin terraza ni balcón en ficha ni descripción (2.5/10)"]
+        terrace_parts = ["Sin terraza ni balcón en ficha ni descripción (base 2.5)"]
+        if park_dist_m is not None and park_dist_m <= 300:
+            s_terrace += 1.5
+            terrace_parts.append(f"Compensación parcial: parque circundante '{park_name}' a solo {park_dist_m} m (+1.5)")
+        elif park_dist_m is not None and park_dist_m <= 550:
+            s_terrace += 0.8
+            terrace_parts.append(f"Parque circundante '{park_name}' a {park_dist_m} m (+0.8)")
         terrace_status = "verificado"
     s_terrace = max(1.0, min(10.0, round(s_terrace, 1)))
     audit_evidence["terrace_and_green_areas"] = {
         "score": s_terrace,
         "status": terrace_status,
-        "source": f"Terraza: {'Sí' if s_terrace >= 7.0 else 'No'} | Parque más cercano: {f'{park_name} ({park_dist_m} m)' if park_dist_m is not None else 'Según texto'}",
+        "source": (
+            f"Terraza: {'Equivalente en pueblo / Bajo exterior' if (is_pueblo and not has_explicit_terrace) else ('Sí' if (has_explicit_terrace or is_house) else 'No')} | "
+            f"Zona verde más cercana: {f'{park_name} ({park_dist_m} m)' if park_dist_m is not None else 'Según texto'}"
+        ),
         "formula": " + ".join(terrace_parts),
-        "detail": "Puntuación basada en la existencia real de terraza y distancia geodésica al parque más cercano.",
+        "detail": (
+            "En pueblos y barrios rurales el bajo o la propia vivienda ya actúa como terraza abierta al entorno; además se mide la distancia a parques y zonas verdes circundantes reales."
+            if is_pueblo
+            else "Puntuación basada en la existencia real de terraza y distancia geodésica al parque o zona verde circundante más cercano."
+        ),
     }
 
     # 8. Estado Interior y Viabilidad de Reforma (Cocina/Baño/Eficiencia) (1-10)
@@ -692,6 +1008,9 @@ def score_listing(listing: Dict[str, Any], profile: Optional[Dict[str, Any]] = N
         elif comm_eur > 130:
             s_costs -= 1.5
             heat_parts.append(f"Gastos de comunidad explícitos en anuncio: {int(comm_eur)} €/mes (-1.5 por ser >130 €)")
+    elif is_house:
+        s_costs += 0.8
+        heat_parts.append("Vivienda unifamiliar / casa sin gastos de comunidad de bloque (+0.8)")
     else:
         heat_parts.append("Cuota de comunidad no indicada en el anuncio (0.0)")
 
@@ -699,16 +1018,24 @@ def score_listing(listing: Dict[str, Any], profile: Optional[Dict[str, Any]] = N
     audit_evidence["running_costs_and_heating"] = {
         "score": s_costs,
         "status": heat_status,
-        "source": f"Calefacción: {listing.get('heating_type') or 'Según texto'} | Comunidad: {f'{int(comm_eur)} €/mes' if comm_eur is not None else 'No especificada en anuncio'}",
+        "source": f"Calefacción: {listing.get('heating_type') or 'Según texto'} | Comunidad: {f'{int(comm_eur)} €/mes' if comm_eur is not None else ('Sin comunidad (casa)' if is_house else 'No especificada en anuncio')}",
         "formula": " + ".join(heat_parts),
         "detail": "Solo se bonifica o penaliza la cuota de comunidad cuando el importe en €/mes aparece explícitamente en el anuncio.",
     }
 
     # 11. Salud de la Finca (Ascensor, Cota Cero, ITE) (1-10)
     b_parts = []
+    exempt_elevator = is_house or floor_num == 0 or is_pueblo_bajo_or_house
     if not has_elevator:
-        s_building = 1.5
-        b_parts.append("Sin ascensor confirmado en ficha → 1.5/10 (alto riesgo de derrama)")
+        if exempt_elevator:
+            s_building = 7.2
+            b_parts.append("Casa unifamiliar o bajo en pueblo: acceso directo a pie de calle sin necesidad de ascensor (7.2/10)")
+        elif is_pueblo:
+            s_building = 4.5
+            b_parts.append("Finca de baja altura en pueblo sin ascensor (4.5/10)")
+        else:
+            s_building = 1.5
+            b_parts.append("Sin ascensor confirmado en ficha → 1.5/10 (alto riesgo de derrama)")
     else:
         s_building = 7.0
         b_parts.append("Ascensor confirmado en ficha (base 7.0)")
@@ -725,39 +1052,47 @@ def score_listing(listing: Dict[str, Any], profile: Optional[Dict[str, Any]] = N
     audit_evidence["building_health_and_neighbors"] = {
         "score": s_building,
         "status": "verificado",
-        "source": f"Ascensor: {'Sí' if has_elevator else 'No'} | Año finca: {listing.get('year_built') or 'No especificado'}",
+        "source": f"Ascensor: {'Sí' if has_elevator else ('No requiere (bajo/casa)' if exempt_elevator else 'No')} | Año finca: {listing.get('year_built') or 'No especificado'}",
         "formula": " + ".join(b_parts),
-        "detail": "Verifica ascensor instalado y menciones reales en el anuncio sobre cota cero, patio reformado o ITE.",
+        "detail": "Verifica ascensor instalado (o acceso directo en casas/bajos de pueblo) y menciones sobre cota cero o ITE.",
     }
 
     # 12. Nivel de Silencio y Tranquilidad (1-10)
     noise_parts = ["Base neutra 6.0"]
     s_noise = 6.0
     noise_status = "no_especificado"
-    if any(k in desc for k in ["zona tranquila", "calle tranquila", "muy tranquilo", "peatonal", "sin ruidos", "silencioso", "junto al parque"]):
-        s_noise += 2.0
+    if is_pueblo:
+        s_noise += 1.8
         noise_status = "verificado"
-        noise_parts.append("Anuncio destaca calle tranquila / peatonal / junto a parque (+2.0)")
+        noise_parts.append(f"Ubicación en pueblo/barrio rural ({matched_nb}) sin tráfico denso (+1.8)")
+    if any(k in desc for k in ["zona tranquila", "calle tranquila", "muy tranquilo", "peatonal", "sin ruidos", "silencioso", "junto al parque"]):
+        s_noise += 1.5 if is_pueblo else 2.0
+        noise_status = "verificado"
+        noise_parts.append(f"Anuncio destaca calle tranquila / peatonal / junto a parque (+{1.5 if is_pueblo else 2.0})")
     if floor_num is not None and floor_num >= 4:
         s_noise += 1.0
         noise_status = "verificado"
         noise_parts.append(f"Altura planta {floor_num}ª aleja del ruido de calle (+1.0)")
-    elif floor_num is not None and floor_num <= 1:
+    elif floor_num is not None and floor_num <= 1 and not is_pueblo and not is_house:
         s_noise -= 1.2
         noise_status = "verificado"
-        noise_parts.append(f"Planta baja/1ª más expuesta a ruido peatonal (-1.2)")
+        noise_parts.append(f"Planta baja/1ª en zona urbana más expuesta a ruido peatonal (-1.2)")
     s_noise = max(1.0, min(10.0, round(s_noise, 1)))
     audit_evidence["noise_and_tranquility"] = {
         "score": s_noise,
         "status": noise_status,
-        "source": f"Altura: {f'{floor_num}ª planta' if floor_num is not None else 'N/D'} + análisis de texto del anuncio",
+        "source": f"Altura: {f'{floor_num}ª planta' if floor_num is not None else 'N/D'} | Entorno: {'Pueblo/Rural' if is_pueblo else 'Urbano'}",
         "formula": " + ".join(noise_parts),
-        "detail": "Calculado según altura de planta y menciones explícitas de calle peatonal/tranquila.",
+        "detail": "Calculado según entorno (pueblo vs calle urbana), altura de planta y menciones explícitas de tranquilidad.",
     }
 
     # 13. Carril Bici, Tranvía/Bus y Aparcamiento (1-10)
     mob_parts = []
-    if tram_dist_m is not None:
+    if is_pueblo:
+        s_mobility = 7.2
+        mob_parts.append(f"Fácil aparcamiento exterior gratuito en {matched_nb} + conexión bus metropolitano/autovía (7.2)")
+        mob_status = "verificado"
+    elif tram_dist_m is not None:
         if tram_dist_m <= 400:
             s_mobility = 9.0
             mob_parts.append(f"Parada Tranvía '{tram_name}' a {tram_dist_m} m por GPS (9.0)")
@@ -784,7 +1119,7 @@ def score_listing(listing: Dict[str, Any], profile: Optional[Dict[str, Any]] = N
         "status": mob_status,
         "source": f"Distancia GPS a Tranvía L1: {f'{tram_dist_m} m ({tram_name})' if tram_dist_m is not None else 'Sin GPS exacto'} | Garaje: {'Sí' if has_garage else 'No'}",
         "formula": " + ".join(mob_parts),
-        "detail": "Calculado por distancia geodésica real a las paradas del Tranvía de Zaragoza y disponibilidad de garaje.",
+        "detail": "Calculado por facilidad de aparcamiento, distancia geodésica a paradas de transporte y disponibilidad de garaje.",
     }
 
     scores_1_to_10 = {k: v["score"] for k, v in audit_evidence.items()}
@@ -820,10 +1155,15 @@ def score_listing(listing: Dict[str, Any], profile: Optional[Dict[str, Any]] = N
 
     structural_penalty = 0.0
     if not has_elevator:
-        structural_penalty -= 25.0
+        if exempt_elevator:
+            structural_penalty -= 0.0
+        elif is_pueblo:
+            structural_penalty -= 10.0
+        else:
+            structural_penalty -= 25.0
     if bedrooms < 3:
         structural_penalty -= 18.0
-    if floor_num is not None and floor_num < 2:
+    if floor_num is not None and floor_num < 2 and not is_pueblo and not is_house:
         structural_penalty -= 10.0
 
     final_ranking_score = round(base_score_100 + total_bonuses + structural_penalty, 1)
@@ -853,6 +1193,7 @@ def score_listing(listing: Dict[str, Any], profile: Optional[Dict[str, Any]] = N
             "nearest_park_m": park_dist_m,
             "nearest_tram_name": tram_name,
             "nearest_tram_m": tram_dist_m,
+            "is_pueblo": is_pueblo,
         },
         "final_ranking_score": final_ranking_score,
         "zone_info": {
@@ -861,6 +1202,7 @@ def score_listing(listing: Dict[str, Any], profile: Optional[Dict[str, Any]] = N
             "zone_score_10": s_zone,
             "matched_neighborhood": matched_nb,
             "avg_zone_eur_sqm": avg_zone_sqm,
+            "is_pueblo": is_pueblo,
         },
         "financial_analysis": fin_est,
         "hard_discard": hard_discard,

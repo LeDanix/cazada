@@ -63,13 +63,18 @@ BARRIO_CENTERS = {
     "Montecanal": (41.6285, -0.9230),
     "Parque Goya": (41.6880, -0.8730),
     "Santa Isabel": (41.6655, -0.8385),
+    "Casablanca": (41.6305, -0.9100),
     "Casetas": (41.7190, -1.0225),
+    "Villarrapa": (41.7345, -1.0450),
     "Garrapinillos": (41.6850, -1.0120),
+    "Monzalbarba": (41.6960, -0.9680),
+    "Alfocea": (41.7035, -0.9465),
     "Movera": (41.6510, -0.8150),
     "Juslibol": (41.6885, -0.9065),
     "Montañana": (41.7080, -0.8350),
     "Peñaflor": (41.7550, -0.7950),
     "San Juan de Mozarrifar": (41.7120, -0.8610),
+    "La Cartuja Baja": (41.6040, -0.8220),
 }
 
 
@@ -134,6 +139,8 @@ def format_row_for_frontend(r: sqlite3.Row, profile: dict | None = None) -> dict
     sweet_max_cfg = int(p_fin.get("sweet_spot_reform_price_max_eur", 135000))
     max_quota_cfg = int(p_fin.get("max_monthly_mortgage_eur", 700))
 
+    is_pueblo = bool(zone_info.get("is_pueblo", False))
+
     if price <= sweet_max_cfg:
         badges.append(f"Estrategia A (≤{sweet_max_cfg // 1000}k € para reformar)")
     if d.get("has_garage"):
@@ -144,6 +151,8 @@ def format_row_for_frontend(r: sqlite3.Row, profile: dict | None = None) -> dict
         badges.append(f"Ático (+{int(bonuses.get('penthouse_solarium_points', 5))} pts)")
     if d.get("has_terrace"):
         badges.append("Con terraza")
+    elif is_pueblo:
+        badges.append("En pueblo (Bajo = terraza)")
     if fin.get("fits_monthly_limit_700"):
         badges.append(f"Cuota {fin.get('monthly_mortgage_eur', 0):.0f} €/mes (≤{max_quota_cfg} €)")
 
@@ -179,6 +188,7 @@ def format_row_for_frontend(r: sqlite3.Row, profile: dict | None = None) -> dict
         "floor": d.get("floor_num"),
         "has_elevator": bool(d.get("has_elevator", 1)),
         "has_terrace": bool(d.get("has_terrace", 0)),
+        "is_pueblo": is_pueblo,
         "has_garage": bool(d.get("has_garage", 0)),
         "has_storage": bool(d.get("has_storage", 0)),
         "has_penthouse": bool(d.get("is_penthouse", 0)),
@@ -310,25 +320,35 @@ def fetch_all_properties_and_profile() -> dict:
 def recalculate_all_scores(new_profile: dict) -> None:
     CONFIG_PATH.write_text(json.dumps(new_profile, indent=2, ensure_ascii=False), encoding="utf-8")
     conn = get_db_connection()
-    rows = conn.execute("SELECT id, raw_json FROM listings").fetchall()
+    rows = conn.execute("SELECT * FROM listings").fetchall()
     for r in rows:
-        item = json.loads(r["raw_json"] or "{}")
+        d = dict(r)
+        item = json.loads(d.get("raw_json") or "{}")
         if not item:
-            continue
+            item = d
+        else:
+            for k in ("price_eur", "sqm", "bedrooms", "bathrooms", "floor_num", "has_elevator", "has_terrace", "has_garage", "has_storage", "is_penthouse", "is_agency", "seller_name", "orientation", "heating_type", "community_eur", "year_built", "lat", "lon", "neighborhood", "address", "title", "description"):
+                if d.get(k) is not None and item.get(k) is None:
+                    item[k] = d[k]
         score_res = score_listing(item, new_profile)
+        matched_nb = score_res["zone_info"].get("matched_neighborhood")
+        new_nb = d.get("neighborhood")
+        if matched_nb and matched_nb not in ("Zaragoza (General)", "Zaragoza Capital"):
+            new_nb = matched_nb
         conn.execute(
             """
             UPDATE listings
-            SET score_json = ?, final_ranking_score = ?, base_score_100 = ?, zone_tier = ?, hard_discard = ?
+            SET neighborhood = ?, score_json = ?, final_ranking_score = ?, base_score_100 = ?, zone_tier = ?, hard_discard = ?
             WHERE id = ?
             """,
             (
+                new_nb,
                 json.dumps(score_res, ensure_ascii=False),
                 score_res["final_ranking_score"],
                 score_res["base_score_100"],
                 score_res["zone_info"]["tier"],
                 1 if score_res["hard_discard"] else 0,
-                r["id"],
+                d["id"],
             ),
         )
     conn.commit()

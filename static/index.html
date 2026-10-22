@@ -1878,7 +1878,7 @@
               <span><strong>${p.bedrooms}</strong> hab.</span>
               <span>·</span>
               <span>${floorLabel}</span>
-              ${p.has_terrace ? `<span>· Terraza</span>` : ''}
+              ${p.has_terrace ? `<span>· Terraza</span>` : (p.is_pueblo ? `<span>· Bajo/Pueblo</span>` : '')}
               ${p.has_garage ? `<span>· Garaje</span>` : ''}
             </div>
 
@@ -2188,7 +2188,7 @@
               </div>
               <div class="vertical-spec-row">
                 <span class="vertical-spec-label">Terraza o balcón exterior</span>
-                <span class="vertical-spec-value">${p.has_terrace ? 'Sí dispone de terraza/balcón' : 'No especificado'}</span>
+                <span class="vertical-spec-value">${p.has_terrace ? 'Sí dispone de terraza/balcón' : (p.is_pueblo ? 'En pueblo (el bajo/acceso directo ya actúa como terraza)' : 'No especificado')}</span>
               </div>
               <div class="vertical-spec-row">
                 <span class="vertical-spec-label">Garaje y Trastero</span>
