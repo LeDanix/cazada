@@ -1,5 +1,6 @@
 import html as html_lib
 import json
+import math
 import re
 import sqlite3
 import sys
@@ -363,7 +364,7 @@ class ZgzHouseFinderHandler(BaseHTTPRequestHandler):
             svg_logo = (
                 '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">'
                 '<rect width="64" height="64" rx="14" fill="#2B5B84"/>'
-                '<path d="M16 15h32v8.5L26.5 41H48v8H16v-8.5L37.5 23H16V15z" fill="#FFFFFF"/>'
+                '<path d="M42.2 21.8A14.5 14.5 0 1 0 42.2 42.2" fill="none" stroke="#FFFFFF" stroke-width="8.5" stroke-linecap="round"/>'
                 '</svg>'
             ).encode("utf-8")
             self.send_response(200)
@@ -384,20 +385,18 @@ class ZgzHouseFinderHandler(BaseHTTPRequestHandler):
             draw = ImageDraw.Draw(img)
             # Fondo Azul Pantone #2B5B84 (RGB: 43, 91, 132) con bordes redondeados
             draw.rounded_rectangle([0, 0, size - 1, size - 1], radius=14 * scale, fill=(43, 91, 132, 255))
-            # Letra Z blanca geométrica
-            z_poly = [
-                (16 * scale, 15 * scale),
-                (48 * scale, 15 * scale),
-                (48 * scale, 23 * scale),
-                (27 * scale, 41 * scale),
-                (48 * scale, 41 * scale),
-                (48 * scale, 49 * scale),
-                (16 * scale, 49 * scale),
-                (16 * scale, 41 * scale),
-                (37 * scale, 23 * scale),
-                (16 * scale, 23 * scale),
-            ]
-            draw.polygon(z_poly, fill=(255, 255, 255, 255))
+            # Letra C blanca geométrica con remates redondeados
+            cx, cy = 33.0 * scale, 32.0 * scale
+            ring_r = 14.2 * scale
+            stroke_r = 4.25 * scale
+            for deg in range(44, 317):
+                rad = math.radians(deg)
+                px = cx + ring_r * math.cos(rad)
+                py = cy + ring_r * math.sin(rad)
+                draw.ellipse(
+                    [px - stroke_r, py - stroke_r, px + stroke_r, py + stroke_r],
+                    fill=(255, 255, 255, 255),
+                )
             img_small = img.resize((64, 64), Image.Resampling.LANCZOS)
             buf = io.BytesIO()
             if parsed.path.endswith(".ico"):
@@ -626,7 +625,7 @@ class ZgzHouseFinderHandler(BaseHTTPRequestHandler):
 def run_server(port: int = 8765) -> None:
     get_db_connection().close()
     server = ThreadingHTTPServer(("127.0.0.1", port), ZgzHouseFinderHandler)
-    print(f"ZgzHouseFinder Web Local activa en: http://127.0.0.1:{port}")
+    print(f"Cazada Web Local activa en: http://127.0.0.1:{port}")
     server.serve_forever()
 
 
