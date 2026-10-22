@@ -1213,6 +1213,35 @@
       display: none;
       z-index: 3000;
     }
+
+    .chollos-banner {
+      background: var(--bg-card);
+      border: 1px solid var(--primary-border);
+      border-left: 4px solid var(--primary);
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      margin-bottom: 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .chollos-meta-strip {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 10px;
+      background: var(--primary-soft);
+      border: 1px solid var(--primary-border);
+      border-radius: 5px;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
   </style>
 </head>
 <body>
@@ -1252,6 +1281,7 @@
 
       <div class="nav-tabs">
         <button class="tab-btn active" id="tab-btn-ranking" data-tab="ranking" onclick="switchTab('ranking', this)">Catálogo de Viviendas</button>
+        <button class="tab-btn" id="tab-btn-chollos" data-tab="chollos" onclick="switchTab('chollos', this)">Chollos / Para Invertir</button>
         <button class="tab-btn" id="tab-btn-map" data-tab="map" onclick="switchTab('map', this)">Mapa</button>
         <button class="tab-btn" id="tab-btn-neighborhoods" data-tab="neighborhoods" onclick="switchTab('neighborhoods', this)">Tabla de Barrios Zaragoza</button>
         <button class="tab-btn" id="tab-btn-guide" data-tab="guide" onclick="switchTab('guide', this)">Guía Financiera e ITP Aragón</button>
@@ -1316,6 +1346,30 @@
       <!-- TAB 1: CATÁLOGO DE VIVIENDAS -->
       <div id="tab-ranking" class="tab-content active">
         <div id="properties-list" class="property-grid"></div>
+      </div>
+
+      <!-- TAB 1B: CHOLLOS / PARA INVERTIR (VIVIENDAS MÁS BARATAS Y DE REFORMA) -->
+      <div id="tab-chollos" class="tab-content">
+        <div class="chollos-banner">
+          <div>
+            <div style="font-size:0.94rem; font-weight:700; color:var(--primary);" id="chollos-banner-title">
+              Chollos y Viviendas para Invertir en Reforma
+            </div>
+            <div style="font-size:0.8rem; color:var(--text-muted); margin-top:3px;" id="chollos-banner-sub">
+              Inmuebles de precio base reducido donde invertir capital propio en reforma o actualización genera ahorro mensual y plusvalía patrimonial.
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <label for="chollos-sort" style="font-size:0.74rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em;">Ordenar por</label>
+            <select id="chollos-sort" onchange="renderProperties()" style="padding:7px 11px; font-size:0.8rem; font-weight:600;">
+              <option value="score">Mayor puntuación global</option>
+              <option value="equity">Mayor plusvalía neta tras reforma</option>
+              <option value="price_asc">Menor precio base de compra</option>
+              <option value="total_asc">Menor inversión total (c/gastos y reforma)</option>
+            </select>
+          </div>
+        </div>
+        <div id="chollos-list" class="property-grid"></div>
       </div>
 
       <!-- TAB 2: MAPA (PESTAÑA INDEPENDIENTE) -->
@@ -1513,6 +1567,9 @@
     let MAP_MARKERS = [];
     let PHOTO_INDEX_MAP = {};
     let CURRENT_FILTERED_IDS = [];
+    let LAST_RANKING_IDS = [];
+    let LAST_CHOLLOS_IDS = [];
+    let ACTIVE_MAIN_TAB = 'ranking';
 
     function showToast(msg) {
       const t = document.getElementById('toast-msg');
@@ -1602,16 +1659,32 @@
       renderGuide();
     }
 
+    function isCholloProperty(p) {
+      const finCfg = (APP_STATE && APP_STATE.profile && APP_STATE.profile.financials) ? APP_STATE.profile.financials : {};
+      const sweetSpotPrice = finCfg.sweet_spot_reform_price_max_eur || 135000;
+      const evFin = (p.evaluation && p.evaluation.financials) ? p.evaluation.financials : {};
+      const estReform = evFin.estimated_reform_eur || 0;
+      const netEquity = evFin.net_equity_gain_eur || 0;
+      // Incluye viviendas económicas <= tope Estrategia Reforma (135k € por defecto)
+      // y viviendas hasta +15k € adicionales que requieran invertir capital en reforma (>= 10k €) con plusvalía positiva
+      return (p.price <= sweetSpotPrice) || (p.price <= sweetSpotPrice + 15000 && estReform >= 10000 && netEquity > 0);
+    }
+
     function renderKPIs() {
       const props = APP_STATE.properties.filter(p => !p.hard_discard && p.user_status !== 'descartado');
       const particulares = props.filter(p => !p.is_agency);
       const fin = APP_STATE.profile.financials;
       const sweetSpotPrice = fin.sweet_spot_reform_price_max_eur || 135000;
-      const sweetDeals = props.filter(p => p.price <= sweetSpotPrice);
+      const chollosDeals = props.filter(p => isCholloProperty(p));
       const topProp = props[0];
       const debtPct = fin.net_monthly_income_eur > 0
         ? ((fin.max_monthly_mortgage_eur / fin.net_monthly_income_eur) * 100).toFixed(1).replace('.0', '')
         : '33';
+
+      const chollosTabBtn = document.getElementById('tab-btn-chollos');
+      if (chollosTabBtn) {
+        chollosTabBtn.textContent = `Chollos / Para Invertir (${chollosDeals.length})`;
+      }
 
       const kpis = [
         {
@@ -1622,7 +1695,8 @@
         {
           label: 'Candidatos Válidos',
           value: `${props.length} viviendas`,
-          sub: `De ${APP_STATE.properties.length} analizadas · Tope ${fmtEur(fin.target_price_max_eur || 200000)}`
+          sub: `De ${APP_STATE.properties.length} analizadas · Tope ${fmtEur(fin.target_price_max_eur || 200000)}`,
+          onclick: `switchTab('ranking')`
         },
         {
           label: 'Trato Directo vs Agencia',
@@ -1630,9 +1704,10 @@
           sub: `${props.length - particulares.length} de agencia (penalizados en puntos)`
         },
         {
-          label: `Oportunidades <= ${fmtEur(sweetSpotPrice)}`,
-          value: `${sweetDeals.length} viviendas`,
-          sub: `Aptas para estrategia de reforma eficiente`
+          label: `Chollos / Para Invertir`,
+          value: `${chollosDeals.length} viviendas`,
+          sub: `Hasta ${fmtEur(sweetSpotPrice)} o reforma con plusvalía (ver pestaña)`,
+          onclick: `switchTab('chollos')`
         },
         {
           label: 'Mejor Puntuación Actual',
@@ -1642,7 +1717,7 @@
       ];
 
       document.getElementById('kpi-container').innerHTML = kpis.map(k => `
-        <div class="kpi-card">
+        <div class="kpi-card" ${k.onclick ? `onclick="${k.onclick}" style="cursor:pointer;" title="Ir a la pestaña correspondiente"` : ''}>
           <div class="kpi-label">${k.label}</div>
           <div class="kpi-value">${k.value}</div>
           <div class="kpi-sub">${k.sub}</div>
@@ -1657,10 +1732,10 @@
       const cur = PHOTO_INDEX_MAP[propId] || 0;
       const next = (cur + delta + prop.photos.length) % prop.photos.length;
       PHOTO_INDEX_MAP[propId] = next;
-      const imgEl = document.getElementById(`img-${propId}`);
-      const countEl = document.getElementById(`img-count-${propId}`);
-      if (imgEl) imgEl.src = proxiedImg(prop.photos[next]);
-      if (countEl) countEl.textContent = `${next + 1}/${prop.photos.length}`;
+      const newSrc = proxiedImg(prop.photos[next]);
+      const newCount = `${next + 1}/${prop.photos.length}`;
+      document.querySelectorAll(`img[data-img-prop="${propId}"]`).forEach(el => { el.src = newSrc; });
+      document.querySelectorAll(`span[data-img-count-prop="${propId}"]`).forEach(el => { el.textContent = newCount; });
     }
 
     function selectDetailPhoto(propId, idx) {
@@ -1702,124 +1777,176 @@
       });
     }
 
+    function getChollosProperties(baseFiltered) {
+      const list = (baseFiltered || getFilteredProperties()).filter(p => isCholloProperty(p));
+      const sortMode = document.getElementById('chollos-sort')?.value || 'score';
+      const sorted = [...list];
+      if (sortMode === 'equity') {
+        sorted.sort((a, b) => (b.evaluation?.financials?.net_equity_gain_eur || 0) - (a.evaluation?.financials?.net_equity_gain_eur || 0));
+      } else if (sortMode === 'price_asc') {
+        sorted.sort((a, b) => (a.price || 0) - (b.price || 0));
+      } else if (sortMode === 'total_asc') {
+        sorted.sort((a, b) => (a.evaluation?.financials?.total_investment_eur || 0) - (b.evaluation?.financials?.total_investment_eur || 0));
+      } else {
+        sorted.sort((a, b) => (b.total_points || 0) - (a.total_points || 0));
+      }
+      return sorted;
+    }
+
+    function buildPropertyCardHtml(p, idx, isCholloCard) {
+      const ev = p.evaluation;
+      const fin = ev.financials;
+      const scoreClass = p.total_points >= 75 ? 'score-high' : (p.total_points >= 60 ? 'score-mid' : 'score-low');
+      const photos = (p.photos && p.photos.length) ? p.photos : (p.image_url ? [p.image_url] : []);
+      const curPhotoIdx = PHOTO_INDEX_MAP[p.id] || 0;
+      const currentPhotoUrl = photos.length ? proxiedImg(photos[curPhotoIdx]) : '';
+
+      let sellerPill = '';
+      if (!p.is_agency) {
+        sellerPill = `<span class="pill-seller pill-particular">Particular · 0 € comisión</span>`;
+      } else if (p.buyer_fee_exempt) {
+        sellerPill = `<span class="pill-seller pill-nofee">Agencia · 0 € com. comprador</span>`;
+      } else {
+        sellerPill = `<span class="pill-seller pill-agency">Agencia (${ev.bonuses.agency_penalty_points} pts)</span>`;
+      }
+
+      const floorLabel = (p.floor !== null && p.floor !== undefined) ? `${p.floor}ª planta` : 'Planta N/D';
+      const zonePtsLabel = p.zone_points !== undefined ? `${p.zone_points} pts` : '';
+      const portalTagText = (p.also_in_portals && p.also_in_portals.length)
+        ? `${p.portal} (+${p.also_in_portals.map(a => a.portal).join(', ')})`
+        : p.portal;
+
+      const cholloStripHtml = isCholloCard ? `
+        <div class="chollos-meta-strip">
+          <span>Capital reforma est.: <strong style="color:var(--primary);">${fmtEur(fin.estimated_reform_eur)}</strong> (${fin.reform_type || 'Actualización'})</span>
+          <span style="font-weight:700; color:${fin.net_equity_gain_eur >= 0 ? 'var(--success)' : 'var(--text-secondary)'};">
+            Plusvalía: ${fin.net_equity_gain_eur >= 0 ? '+' : ''}${fmtEur(fin.net_equity_gain_eur)}
+          </span>
+        </div>
+      ` : '';
+
+      return `
+        <article class="clean-card ${p.hard_discard ? 'discarded' : ''}">
+          <div class="clean-card-media" onclick="openPropertyDetail('${p.id}')">
+            ${currentPhotoUrl ? `<img data-img-prop="${p.id}" src="${currentPhotoUrl}" alt="${p.title}" loading="lazy" />` : `<div style="height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:0.82rem;">Sin fotografía</div>`}
+
+            <div class="card-top-overlay">
+              <div class="rank-chip">
+                <span>#${idx + 1}</span>
+                <span class="zone-pill-mini z-${p.zone_tier}">${p.neighborhood} · ${zonePtsLabel}</span>
+              </div>
+              <div class="score-floating ${scoreClass}">
+                ${p.total_points.toFixed(1)}<small>pts</small>
+              </div>
+            </div>
+
+            <span class="portal-mini-tag">${portalTagText}</span>
+
+            ${photos.length > 1 ? `
+              <div class="photo-mini-nav" onclick="event.stopPropagation()">
+                <button onclick="changePhoto('${p.id}', -1, event)">Anterior</button>
+                <span data-img-count-prop="${p.id}">${curPhotoIdx + 1}/${photos.length}</span>
+                <button onclick="changePhoto('${p.id}', 1, event)">Siguiente</button>
+              </div>
+            ` : ''}
+          </div>
+
+          <div class="clean-card-body">
+            <div class="clean-price-row">
+              <div>
+                <span class="clean-price">${fmtEur(p.price)}</span>
+                ${p.previous_price && p.previous_price > p.price ? `<span style="font-size:0.74rem;color:var(--success);margin-left:6px;font-weight:600;">Bajó desde ${fmtEur(p.previous_price)}</span>` : ''}
+              </div>
+              <span class="clean-quota">Cuota: ${fmtEur(fin.monthly_quota_90_eur)}/mes</span>
+            </div>
+
+            <div class="clean-title" onclick="openPropertyDetail('${p.id}')" title="${p.title}">
+              ${p.title}
+            </div>
+            <div class="clean-location">
+              <strong>${p.neighborhood}</strong> (${zonePtsLabel}) · ${p.street}
+            </div>
+
+            <div class="clean-specs">
+              <span><strong>${p.sqm}</strong> m² (${fmtEur(ev.price_per_sqm)}/m²)</span>
+              <span>·</span>
+              <span><strong>${p.bedrooms}</strong> hab.</span>
+              <span>·</span>
+              <span>${floorLabel}</span>
+              ${p.has_terrace ? `<span>· Terraza</span>` : ''}
+              ${p.has_garage ? `<span>· Garaje</span>` : ''}
+            </div>
+
+            ${cholloStripHtml}
+
+            <div class="clean-pills-row">
+              ${sellerPill}
+              <span style="font-size:0.74rem; color:var(--text-muted);">
+                Total c/gastos y reforma: <strong style="color:var(--text);">${fmtEur(fin.total_investment_eur)}</strong>
+              </span>
+            </div>
+          </div>
+
+          <div class="clean-card-footer">
+            <select onchange="updatePropertyStatus('${p.id}', this.value)" style="padding:5px 8px; font-size:0.75rem; background:#FFFFFF;">
+              <option value="nuevo" ${p.user_status === 'nuevo' ? 'selected' : ''}>Estado: Nuevo</option>
+              <option value="favorito" ${p.user_status === 'favorito' ? 'selected' : ''}>Favorito</option>
+              <option value="contactar" ${p.user_status === 'contactar' ? 'selected' : ''}>Contactar / Visitar</option>
+              <option value="visitado" ${p.user_status === 'visitado' ? 'selected' : ''}>Visitado</option>
+              <option value="descartado" ${p.user_status === 'descartado' ? 'selected' : ''}>Descartado</option>
+            </select>
+
+            <div style="display:flex; gap:6px; align-items:center;">
+              <a href="${p.url}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary" style="padding:6px 10px; font-size:0.74rem;" title="Abrir anuncio original en ${p.portal}">
+                Portal
+              </a>
+              <button class="btn-outline-blue" style="padding:6px 12px; font-size:0.76rem;" onclick="openPropertyDetail('${p.id}')">
+                Ver ficha completa
+              </button>
+            </div>
+          </div>
+        </article>
+      `;
+    }
+
     function renderProperties() {
       const filtered = getFilteredProperties();
-      CURRENT_FILTERED_IDS = filtered.map(p => p.id);
+      const chollos = getChollosProperties(filtered);
+
+      LAST_RANKING_IDS = filtered.map(p => p.id);
+      LAST_CHOLLOS_IDS = chollos.map(p => p.id);
+      CURRENT_FILTERED_IDS = ACTIVE_MAIN_TAB === 'chollos' ? LAST_CHOLLOS_IDS : LAST_RANKING_IDS;
 
       if (MAP_INSTANCE) {
-        updateMapMarkers(filtered);
+        updateMapMarkers(ACTIVE_MAIN_TAB === 'chollos' ? chollos : filtered);
       }
 
       const container = document.getElementById('properties-list');
       if (!filtered.length) {
         container.innerHTML = `<div class="weights-panel" style="grid-column:1/-1;text-align:center;color:var(--text-muted);">No hay viviendas que coincidan con los filtros seleccionados.</div>`;
-        return;
+      } else {
+        container.innerHTML = filtered.map((p, idx) => buildPropertyCardHtml(p, idx, false)).join('');
       }
 
-      container.innerHTML = filtered.map((p, idx) => {
-        const ev = p.evaluation;
-        const fin = ev.financials;
-        const scoreClass = p.total_points >= 75 ? 'score-high' : (p.total_points >= 60 ? 'score-mid' : 'score-low');
-        const photos = (p.photos && p.photos.length) ? p.photos : (p.image_url ? [p.image_url] : []);
-        const curPhotoIdx = PHOTO_INDEX_MAP[p.id] || 0;
-        const currentPhotoUrl = photos.length ? proxiedImg(photos[curPhotoIdx]) : '';
+      const chollosContainer = document.getElementById('chollos-list');
+      const finCfg = (APP_STATE && APP_STATE.profile && APP_STATE.profile.financials) ? APP_STATE.profile.financials : {};
+      const sweetSpotPrice = finCfg.sweet_spot_reform_price_max_eur || 135000;
+      const bannerTitle = document.getElementById('chollos-banner-title');
+      const bannerSub = document.getElementById('chollos-banner-sub');
+      if (bannerTitle) {
+        bannerTitle.textContent = `Chollos y Viviendas para Invertir Capital (${chollos.length} disponibles con los filtros actuales)`;
+      }
+      if (bannerSub) {
+        bannerSub.textContent = `Incluye pisos económicos de hasta ${fmtEur(sweetSpotPrice)} (Estrategia Reforma) e inmuebles de hasta ${fmtEur(sweetSpotPrice + 15000)} que requieren inversión en reforma con plusvalía neta positiva.`;
+      }
 
-        let sellerPill = '';
-        if (!p.is_agency) {
-          sellerPill = `<span class="pill-seller pill-particular">Particular · 0 € comisión</span>`;
-        } else if (p.buyer_fee_exempt) {
-          sellerPill = `<span class="pill-seller pill-nofee">Agencia · 0 € com. comprador</span>`;
+      if (chollosContainer) {
+        if (!chollos.length) {
+          chollosContainer.innerHTML = `<div class="weights-panel" style="grid-column:1/-1;text-align:center;color:var(--text-muted);">No hay chollos o viviendas de inversión que coincidan con los filtros seleccionados.</div>`;
         } else {
-          sellerPill = `<span class="pill-seller pill-agency">Agencia (${ev.bonuses.agency_penalty_points} pts)</span>`;
+          chollosContainer.innerHTML = chollos.map((p, idx) => buildPropertyCardHtml(p, idx, true)).join('');
         }
-
-        const floorLabel = (p.floor !== null && p.floor !== undefined) ? `${p.floor}ª planta` : 'Planta N/D';
-        const zonePtsLabel = p.zone_points !== undefined ? `${p.zone_points} pts` : '';
-        const portalTagText = (p.also_in_portals && p.also_in_portals.length)
-          ? `${p.portal} (+${p.also_in_portals.map(a => a.portal).join(', ')})`
-          : p.portal;
-
-        return `
-          <article class="clean-card ${p.hard_discard ? 'discarded' : ''}">
-            <div class="clean-card-media" onclick="openPropertyDetail('${p.id}')">
-              ${currentPhotoUrl ? `<img id="img-${p.id}" src="${currentPhotoUrl}" alt="${p.title}" loading="lazy" />` : `<div style="height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:0.82rem;">Sin fotografía</div>`}
-
-              <div class="card-top-overlay">
-                <div class="rank-chip">
-                  <span>#${idx + 1}</span>
-                  <span class="zone-pill-mini z-${p.zone_tier}">${p.neighborhood} · ${zonePtsLabel}</span>
-                </div>
-                <div class="score-floating ${scoreClass}">
-                  ${p.total_points.toFixed(1)}<small>pts</small>
-                </div>
-              </div>
-
-              <span class="portal-mini-tag">${portalTagText}</span>
-
-              ${photos.length > 1 ? `
-                <div class="photo-mini-nav" onclick="event.stopPropagation()">
-                  <button onclick="changePhoto('${p.id}', -1, event)">Anterior</button>
-                  <span id="img-count-${p.id}">${curPhotoIdx + 1}/${photos.length}</span>
-                  <button onclick="changePhoto('${p.id}', 1, event)">Siguiente</button>
-                </div>
-              ` : ''}
-            </div>
-
-            <div class="clean-card-body">
-              <div class="clean-price-row">
-                <div>
-                  <span class="clean-price">${fmtEur(p.price)}</span>
-                  ${p.previous_price && p.previous_price > p.price ? `<span style="font-size:0.74rem;color:var(--success);margin-left:6px;font-weight:600;">Bajó desde ${fmtEur(p.previous_price)}</span>` : ''}
-                </div>
-                <span class="clean-quota">Cuota: ${fmtEur(fin.monthly_quota_90_eur)}/mes</span>
-              </div>
-
-              <div class="clean-title" onclick="openPropertyDetail('${p.id}')" title="${p.title}">
-                ${p.title}
-              </div>
-              <div class="clean-location">
-                <strong>${p.neighborhood}</strong> (${zonePtsLabel}) · ${p.street}
-              </div>
-
-              <div class="clean-specs">
-                <span><strong>${p.sqm}</strong> m² (${fmtEur(ev.price_per_sqm)}/m²)</span>
-                <span>·</span>
-                <span><strong>${p.bedrooms}</strong> hab.</span>
-                <span>·</span>
-                <span>${floorLabel}</span>
-                ${p.has_terrace ? `<span>· Terraza</span>` : ''}
-                ${p.has_garage ? `<span>· Garaje</span>` : ''}
-              </div>
-
-              <div class="clean-pills-row">
-                ${sellerPill}
-                <span style="font-size:0.74rem; color:var(--text-muted);">
-                  Total c/gastos y reforma: <strong style="color:var(--text);">${fmtEur(fin.total_investment_eur)}</strong>
-                </span>
-              </div>
-            </div>
-
-            <div class="clean-card-footer">
-              <select onchange="updatePropertyStatus('${p.id}', this.value)" style="padding:5px 8px; font-size:0.75rem; background:#FFFFFF;">
-                <option value="nuevo" ${p.user_status === 'nuevo' ? 'selected' : ''}>Estado: Nuevo</option>
-                <option value="favorito" ${p.user_status === 'favorito' ? 'selected' : ''}>Favorito</option>
-                <option value="contactar" ${p.user_status === 'contactar' ? 'selected' : ''}>Contactar / Visitar</option>
-                <option value="visitado" ${p.user_status === 'visitado' ? 'selected' : ''}>Visitado</option>
-                <option value="descartado" ${p.user_status === 'descartado' ? 'selected' : ''}>Descartado</option>
-              </select>
-
-              <div style="display:flex; gap:6px; align-items:center;">
-                <a href="${p.url}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary" style="padding:6px 10px; font-size:0.74rem;" title="Abrir anuncio original en ${p.portal}">
-                  Portal
-                </a>
-                <button class="btn-outline-blue" style="padding:6px 12px; font-size:0.76rem;" onclick="openPropertyDetail('${p.id}')">
-                  Ver ficha completa
-                </button>
-              </div>
-            </div>
-          </article>
-        `;
-      }).join('');
+      }
     }
 
     function renderPropertyDetailPage(propId) {
@@ -2684,6 +2811,11 @@
       if (window.location.hash && (window.location.hash.startsWith('#/piso/') || window.location.hash === '#/configuracion')) {
         closePropertyDetail();
       }
+      if (tabName === 'ranking' || tabName === 'chollos') {
+        ACTIVE_MAIN_TAB = tabName;
+        CURRENT_FILTERED_IDS = tabName === 'chollos' ? LAST_CHOLLOS_IDS : LAST_RANKING_IDS;
+      }
+
       document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
       document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
 
@@ -2695,7 +2827,7 @@
 
       const filtersBar = document.getElementById('shared-filters-bar');
       if (filtersBar) {
-        filtersBar.style.display = (tabName === 'ranking' || tabName === 'map') ? 'flex' : 'none';
+        filtersBar.style.display = (tabName === 'ranking' || tabName === 'chollos' || tabName === 'map') ? 'flex' : 'none';
       }
 
       if (tabName === 'map') {
