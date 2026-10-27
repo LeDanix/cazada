@@ -646,10 +646,10 @@ class ZgzHouseFinderHandler(BaseHTTPRequestHandler):
         self.send_error(404, "Endpoint not found")
 
 
-def run_server(port: int = 8765) -> None:
+def run_server(port: int = 8765, host: str = "0.0.0.0") -> None:
     get_db_connection().close()
-    server = ThreadingHTTPServer(("127.0.0.1", port), ZgzHouseFinderHandler)
-    print(f"Cazada Web Local activa en: http://127.0.0.1:{port}")
+    server = ThreadingHTTPServer((host, port), ZgzHouseFinderHandler)
+    print(f"Cazada Web activa en: http://127.0.0.1:{port} (y en red local 0.0.0.0:{port})")
     server.serve_forever()
 
 
