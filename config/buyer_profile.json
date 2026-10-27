@@ -1,6 +1,6 @@
 {
   "profile_name": "Comprador Joven Zaragoza (<35 años) - Eficiencia & Reforma Inteligente",
-  "updated_at": "2026-10-22 09:35",
+  "updated_at": "2026-10-22 14:39",
   "financials": {
     "age_under_35": true,
     "net_monthly_income_eur": 2100.0,
@@ -23,7 +23,7 @@
     "secondary": "Pisos entre 135.000 € y 195.000 € que solo requieran reforma estética leve si la relación calidad/zona/precio compensa."
   },
   "hard_and_soft_requirements": {
-    "min_bedrooms": 3,
+    "min_bedrooms": 2,
     "bedrooms_detail": "1 dormitorio principal + al menos 2 habitaciones amplias y luminosas aptas para despacho/teletrabajo o invitados",
     "min_sqm_strict": 60,
     "min_sqm_ideal": 70,
@@ -116,17 +116,17 @@
       "base_score_10": 1.0,
       "label": "Pueblos y Barrios Rurales (1.0 punto)",
       "neighborhoods": [
-        "Casetas",
-        "Villarrapa",
-        "Garrapinillos",
-        "Monzalbarba",
-        "Montañana",
-        "Movera",
-        "Juslibol",
         "Alfocea",
+        "Barrios Rurales",
+        "Casetas",
+        "Garrapinillos",
+        "Juslibol",
+        "Montañana",
+        "Monzalbarba",
+        "Movera",
         "Peñaflor",
         "San Juan de Mozarrifar",
-        "Barrios Rurales"
+        "Villarrapa"
       ]
     }
   },
